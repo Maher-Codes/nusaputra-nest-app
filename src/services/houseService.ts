@@ -13,6 +13,7 @@ export const houseService = {
 
     while (!isUnique && attempts < maxAttempts) {
       code = genCode();
+      console.log(`Checking uniqueness for code: ${code} (Attempt ${attempts + 1})`);
       const { data, error } = await supabase
         .from("houses")
         .select("house_code")
@@ -20,12 +21,15 @@ export const houseService = {
         .maybeSingle();
 
       if (error) {
-        console.error("Error checking house code uniqueness:", error.message);
+        console.error("Error checking house code uniqueness:", error);
         throw new Error("Failed to verify house code uniqueness");
       }
 
       if (!data) {
+        console.log(`Code ${code} is unique!`);
         isUnique = true;
+      } else {
+        console.log(`Code ${code} already exists.`);
       }
       attempts++;
     }
@@ -41,6 +45,7 @@ export const houseService = {
    * Inserts a new house into the database.
    */
   async createHouse(name: string, code: string) {
+    console.log("Creating house with name:", name, "and code:", code);
     const { data, error } = await supabase
       .from("houses")
       .insert({
@@ -51,10 +56,11 @@ export const houseService = {
       .single();
 
     if (error) {
-      console.error("Error creating house in Supabase:", error.message);
+      console.error("Error creating house in Supabase:", error);
       throw error;
     }
 
+    console.log("Supabase insert response:", data);
     return data;
   },
 };
