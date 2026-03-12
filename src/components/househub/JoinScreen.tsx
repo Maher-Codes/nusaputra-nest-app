@@ -84,7 +84,7 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
                   inputMode="numeric"
                   maxLength={1}
                   value={d}
-                  className={`w-12 h-16 rounded-xl border-2 bg-cream font-display text-2xl font-bold text-forest text-center outline-none transition-all focus:border-forest focus:shadow-[0_0_0_4px_rgba(26,58,42,.1)] focus:scale-105 ${d ? "border-forest/35 bg-card" : "border-border"}`}
+                  className={`w-12 h-16 rounded-xl border-2 bg-cream font-display text-2xl font-bold text-forest text-center outline-none transition-all focus:border-forest focus:shadow-[0_0_0_4px_hsla(217,91%,53%,.1)] focus:scale-105 ${d ? "border-forest/35 bg-card" : "border-border"}`}
                   ref={el => { refs.current[i] = el; }}
                   onChange={e => handleDigit(i, e.target.value)}
                   onKeyDown={e => handleKey(i, e)}
@@ -98,7 +98,7 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
                 {error}
               </div>
             )}
-            <button className="w-full py-4 rounded-xl bg-forest font-bold text-cream shadow-[0_4px_20px_rgba(26,58,42,.3)] hover:bg-forest-2 active:scale-[0.96] transition-all disabled:opacity-40" onClick={verify} disabled={!digits.every(d => d)}>Verify Code →</button>
+            <button className="w-full py-4 rounded-xl bg-forest font-bold text-cream shadow-[0_4px_20px_hsla(217,91%,53%,.3)] hover:bg-forest-2 active:scale-[0.96] transition-all disabled:opacity-40" onClick={verify} disabled={!digits.every(d => d)}>Verify Code →</button>
             <p className="text-ink-4 text-xs text-center">Ask your housemate for the 6-digit code 😊</p>
           </div>
         )}

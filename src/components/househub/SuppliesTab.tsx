@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Member, Purchase, Supply, SUPPLIES, fmtDate, ago } from "@/lib/househub";
+import { Member, Purchase, Supply, SUPPLIES } from "@/lib/househub";
 
 interface SuppliesTabProps {
   user: Member | null;
@@ -21,19 +21,13 @@ const SuppliesTab = ({ user, doBuy, purchases, getMember, nextBuyer, lastBoughtM
     setTimeout(() => { doBuy(s); setConfirmed(true); }, 500);
   };
 
-  const supplyStatus = SUPPLIES.map(s => {
-    const l = lastBoughtMap[s.id];
-    const d = l ? Math.floor((Date.now() - new Date(l.purchase_date).getTime()) / 86400000) : 999;
-    return { ...s, last: l, daysAgo: d, member: l ? getMember(l.member_id) : null };
-  });
-
   return (
     <div className="flex flex-col gap-4">
       <p className="font-display font-bold italic text-xs text-ink-3 uppercase tracking-widest animate-fade-up" style={{ animationDelay: ".03s" }}>🛒 My Responsibility</p>
 
       {isMyTurn ? (
         <div className="rounded-2xl border p-5 bg-gradient-to-br from-gold/10 to-gold/5 border-gold/20 animate-fade-up" style={{ animationDelay: ".06s" }}>
-          <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: "#8a6a10" }}>⚡ It's your turn to buy</p>
+          <p className="text-xs font-bold tracking-widest uppercase mb-2 text-gold">⚡ It's your turn to buy</p>
           <h2 className="font-display font-black text-xl mb-1.5">What did you buy for the house?</h2>
           <p className="text-ink-3 text-sm leading-relaxed">Tap what you bought below — we'll save it instantly.</p>
         </div>
@@ -64,7 +58,7 @@ const SuppliesTab = ({ user, doBuy, purchases, getMember, nextBuyer, lastBoughtM
                 <div className="flex-1 text-left">
                   <div className="text-base mb-0.5">{s.label}</div>
                   {lb ? (
-                    <div className="font-normal text-xs text-ink-3">Last: {lbM?.name} · {ago(lb.purchase_date)}</div>
+                    <div className="font-normal text-xs text-ink-3">Last bought by {lbM?.name}</div>
                   ) : (
                     <div className="font-semibold text-xs text-rust">Never recorded</div>
                   )}
@@ -97,26 +91,25 @@ const SuppliesTab = ({ user, doBuy, purchases, getMember, nextBuyer, lastBoughtM
         <>
           <p className="font-display font-bold italic text-xs text-ink-3 uppercase tracking-widest mt-1 animate-fade-up" style={{ animationDelay: ".4s" }}>📊 Supply Status</p>
           <div className="grid grid-cols-2 gap-2.5">
-            {supplyStatus.map((s, i) => (
-              <div
-                key={s.id}
-                className={`rounded-2xl border bg-card shadow-warm p-4 transition-all hover:shadow-warm-md animate-fade-up ${s.daysAgo > 10 ? "border-rust/20" : "border-border"}`}
-                style={{ animationDelay: `${0.42 + i * 0.05}s` }}
-              >
-                <div className="text-3xl mb-2">{s.icon}</div>
-                <p className="font-bold text-sm mb-1">{s.label}</p>
-                {s.last ? (
-                  <>
-                    <p className="text-ink-3 text-xs">By {s.member?.name}</p>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold mt-1.5 ${s.daysAgo > 10 ? "bg-rust/12 text-rust" : "bg-sage/15 text-forest-3"}`}>
-                      {s.daysAgo === 0 ? "Today" : s.daysAgo === 999 ? "Never" : `${s.daysAgo}d ago`}
-                    </span>
-                  </>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rust/12 text-rust">Not recorded</span>
-                )}
-              </div>
-            ))}
+            {SUPPLIES.map((s, i) => {
+              const lb = lastBoughtMap[s.id];
+              const lbM = lb ? getMember(lb.member_id) : null;
+              return (
+                <div
+                  key={s.id}
+                  className="rounded-2xl border border-border bg-card shadow-warm p-4 transition-all hover:shadow-warm-md animate-fade-up"
+                  style={{ animationDelay: `${0.42 + i * 0.05}s` }}
+                >
+                  <div className="text-3xl mb-2">{s.icon}</div>
+                  <p className="font-bold text-sm mb-1">{s.label}</p>
+                  {lb ? (
+                    <p className="text-ink-3 text-xs">Last bought by {lbM?.name}</p>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rust/12 text-rust">Not recorded</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {purchases.length > 0 && (
@@ -130,10 +123,9 @@ const SuppliesTab = ({ user, doBuy, purchases, getMember, nextBuyer, lastBoughtM
                     <div key={p.id} className="flex items-center gap-3.5 py-3 border-b border-border last:border-b-0 animate-fade-up" style={{ animationDelay: `${0.6 + i * 0.04}s` }}>
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0" style={{ background: s.bg }}>{s.icon}</div>
                       <div className="flex-1">
-                        <p className="font-bold text-sm">{m?.name} bought {s.label}</p>
-                        <p className="text-ink-3 text-xs mt-0.5">{fmtDate(p.purchase_date, { day: "numeric", month: "short", year: "numeric" })}</p>
+                        <p className="font-bold text-sm">{s.label}</p>
+                        <p className="text-ink-3 text-xs mt-0.5">Last bought by {m?.name}</p>
                       </div>
-                      <span className="text-ink-4 text-xs">{ago(p.purchase_date)}</span>
                     </div>
                   );
                 })}

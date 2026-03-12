@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { Member, House, CleanRecord, Purchase, ActivityLog, RotationEntry, Alert, Supply, SUPPLIES, uid, now, nextSat, fmtShort, greet, todayFull, ago } from "@/lib/househub";
+import { Member, House, CleanRecord, Purchase, ActivityLog, RotationEntry, Alert, Supply, SUPPLIES, uid, now, nextSat, greet, todayFull } from "@/lib/househub";
 import HomeTab from "./HomeTab";
 import CleaningTab from "./CleaningTab";
 import SuppliesTab from "./SuppliesTab";
@@ -92,7 +92,7 @@ const Dashboard = ({ initialUser, initialHouse, initialMembers, initialCleanRecs
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="relative overflow-hidden px-5 pt-8 pb-20" style={{ background: "radial-gradient(ellipse 80% 60% at 90% 0%, rgba(26,58,42,.07), transparent 60%), radial-gradient(ellipse 60% 50% at 5% 95%, rgba(196,154,46,.06), transparent 55%), hsl(var(--cream))" }}>
+      <div className="relative overflow-hidden px-5 pt-8 pb-20 bg-background">
         <div className="max-w-xl mx-auto relative">
           <p className="text-xs font-bold text-ink-4 tracking-widest uppercase mb-4 animate-fade-down">
             📅 {todayFull()}
@@ -107,27 +107,16 @@ const Dashboard = ({ initialUser, initialHouse, initialMembers, initialCleanRecs
                 Hope you have a wonderful day! ✨
               </p>
             </div>
-            {alerts.length > 0 && (
-              <div className="shrink-0 bg-card border-2 border-border rounded-xl px-3 py-2 flex items-center gap-1.5 shadow-warm animate-pop" style={{ animationDelay: ".25s" }}>
-                <span>🔔</span>
-                <span className="font-display font-bold text-sm text-forest">{alerts.length}</span>
-              </div>
-            )}
           </div>
 
+          {/* Alerts under greeting */}
           {alerts.length > 0 && (
-            <div className="flex flex-col gap-2 animate-fade-up" style={{ animationDelay: ".28s" }}>
+            <div className="flex flex-col gap-2 mt-3 animate-fade-up" style={{ animationDelay: ".2s" }}>
               {alerts.slice(0, 3).map((a, i) => (
                 <div
                   key={a.id}
-                  className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold animate-notif-in"
-                  style={{
-                    background: i === 0 ? "rgba(26,58,42,.09)" : "rgba(28,24,16,.04)",
-                    border: `1px solid ${i === 0 ? "rgba(26,58,42,.2)" : "hsl(var(--border))"}`,
-                    animationDelay: `${i * 0.06}s`,
-                    color: i === 0 ? "hsl(var(--forest))" : "hsl(var(--ink-3))",
-                    fontWeight: i === 0 ? 700 : 600,
-                  }}
+                  className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold bg-forest/8 border border-forest/15 text-forest animate-notif-in"
+                  style={{ animationDelay: `${i * 0.06}s` }}
                 >
                   <span className="text-base">{a.icon}</span>
                   <span>{a.msg}</span>
@@ -144,7 +133,7 @@ const Dashboard = ({ initialUser, initialHouse, initialMembers, initialCleanRecs
           {tabs.map(t => (
             <button
               key={t.id}
-              className={`flex-1 py-3 px-2 rounded-xl border-none cursor-pointer font-bold text-xs flex flex-col items-center gap-1 transition-all ${tab === t.id ? "bg-card text-forest shadow-[0_2px_12px_rgba(28,24,16,.1)]" : "bg-transparent text-ink-4"}`}
+              className={`flex-1 py-3 px-2 rounded-xl border-none cursor-pointer font-bold text-xs flex flex-col items-center gap-1 transition-all ${tab === t.id ? "bg-card text-forest shadow-[0_2px_12px_hsla(215,15%,15%,.1)]" : "bg-transparent text-ink-4"}`}
               onClick={() => setTab(t.id)}
             >
               <span className="text-lg">{t.ico}</span>

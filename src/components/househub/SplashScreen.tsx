@@ -16,7 +16,7 @@ const SplashScreen = () => (
           key={i}
           className="w-2 h-2 rounded-full"
           style={{
-            background: i === 1 ? "hsl(var(--gold-2))" : "rgba(246,241,233,.2)",
+            background: i === 1 ? "hsl(var(--gold-2))" : "rgba(255,255,255,.2)",
             animation: `pulse-dot ${1 + i * 0.3}s infinite`,
           }}
         />

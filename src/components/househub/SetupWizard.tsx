@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
-import { Member, House, CleanRecord, Purchase, ActivityLog, RotationEntry, SUPPLIES, uid, now, genCode, buildRotation } from "@/lib/househub";
+import { Member, House, CleanRecord, Purchase, ActivityLog, RotationEntry, SUPPLIES, uid, now, genCode, buildRotation, fmtDate } from "@/lib/househub";
+import Avatar from "./Avatar";
 
 interface SetupWizardProps {
   enterApp: (member: Member, house: House, members: Member[], cleanRecs: CleanRecord[], purchases: Purchase[], log: ActivityLog[], rotation: RotationEntry[]) => void;
 }
 
-const STEPS = 5;
+const STEPS = 6;
 
 const SetupWizard = ({ enterApp }: SetupWizardProps) => {
   const [step, setStep] = useState(0);
@@ -15,6 +16,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
   const [history, setHistory] = useState<Record<string, string>>({ gas: "", water: "", soap: "", cleaner: "" });
   const [code] = useState(genCode);
   const [copied, setCopied] = useState(false);
+  const [chosen, setChosen] = useState<string | null>(null);
 
   const memberObjs = useMemo<Member[]>(() => names.map((n, i) => ({ id: `m${i + 1}`, name: n.trim(), joined_at: now() })), [names]);
 
@@ -30,7 +32,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
 
   const handleFinish = () => setStep(4);
 
-  const handleEnter = () => {
+  const buildAndEnter = (member: Member) => {
     const houseData: House = { id: uid(), name: houseName.trim(), code, created_at: now() };
     const initPurchases: Purchase[] = [];
     const initLog: ActivityLog[] = [];
@@ -50,7 +52,12 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
 
     const lastCleanerIdx = cleanerMbr ? memberObjs.indexOf(cleanerMbr) : -1;
     const rot = buildRotation(memberObjs, lastCleanerIdx);
-    enterApp(memberObjs[0], houseData, memberObjs, initClean, initPurchases, initLog, rot);
+    enterApp(member, houseData, memberObjs, initClean, initPurchases, initLog, rot);
+  };
+
+  const chooseMember = (m: Member) => {
+    setChosen(m.id);
+    setTimeout(() => buildAndEnter(m), 450);
   };
 
   const copyCode = () => {
@@ -64,10 +71,10 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
   const v2 = names.length > 0 && names.every(n => n.trim().length > 0);
   const v3 = history.gas && history.water && history.soap && history.cleaner;
 
-  const stepTitles = ["House name", "Number of people", "Enter all names", "Previous activity", "Your house code 🎉"];
+  const stepTitles = ["House name", "Number of people", "Enter all names", "Previous activity", "Your house code 🎉", "Select your name"];
 
-  const inputClass = "w-full px-5 py-3.5 rounded-xl border-2 border-border bg-cream font-sans text-base outline-none transition-all focus:border-forest focus:shadow-[0_0_0_4px_rgba(26,58,42,.1)] focus:bg-card placeholder:text-ink-4";
-  const selectClass = "w-full px-5 py-3.5 rounded-xl border-2 border-border bg-cream font-sans text-base outline-none transition-all focus:border-forest focus:shadow-[0_0_0_4px_rgba(26,58,42,.1)] cursor-pointer appearance-none pr-11";
+  const inputClass = "w-full px-5 py-3.5 rounded-xl border-2 border-border bg-cream font-sans text-base outline-none transition-all focus:border-forest focus:shadow-[0_0_0_4px_hsla(217,91%,53%,.1)] focus:bg-card placeholder:text-ink-4";
+  const selectClass = "w-full px-5 py-3.5 rounded-xl border-2 border-border bg-cream font-sans text-base outline-none transition-all focus:border-forest focus:shadow-[0_0_0_4px_hsla(217,91%,53%,.1)] cursor-pointer appearance-none pr-11";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -77,12 +84,12 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
           <p className="text-cream/45 text-xs font-bold tracking-widest uppercase mb-2">Step {step + 1} of {STEPS}</p>
           <h2 className="font-display font-extrabold text-2xl text-cream mb-4">{stepTitles[step]}</h2>
           <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-            <div className="h-full rounded-full bg-gradient-to-r from-forest-3 to-sage-2 transition-all duration-500" style={{ width: `${((step + 1) / STEPS) * 100}%` }} />
+            <div className="h-full rounded-full bg-gradient-to-r from-gold to-gold-2 transition-all duration-500" style={{ width: `${((step + 1) / STEPS) * 100}%` }} />
           </div>
           <div className="flex gap-1.5 mt-3">
             {Array.from({ length: STEPS }).map((_, i) => (
               <div key={i} className="w-2 h-2 rounded-full transition-all duration-300" style={{
-                background: i < step ? "rgba(246,241,233,.45)" : i === step ? "hsl(var(--gold-2))" : "rgba(246,241,233,.18)",
+                background: i < step ? "rgba(255,255,255,.45)" : i === step ? "hsl(var(--gold-2))" : "rgba(255,255,255,.18)",
                 transform: i === step ? "scale(1.4)" : "scale(1)",
               }} />
             ))}
@@ -96,7 +103,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
           <div className="flex flex-col gap-4 animate-fade-up">
             <p className="text-ink-3 text-sm">Give your house a memorable name.</p>
             <input type="text" className={inputClass} placeholder='"Student House A"' value={houseName} onChange={e => setHN(e.target.value)} onKeyDown={e => e.key === "Enter" && v0 && goNext()} autoFocus />
-            <button className="w-full py-4 rounded-xl bg-forest font-bold text-cream shadow-[0_4px_20px_rgba(26,58,42,.3)] hover:bg-forest-2 active:scale-[0.96] transition-all disabled:opacity-40" onClick={goNext} disabled={!v0}>Next →</button>
+            <button className="w-full py-4 rounded-xl bg-forest font-bold text-cream shadow-[0_4px_20px_hsla(217,91%,53%,.3)] hover:bg-forest-2 active:scale-[0.96] transition-all disabled:opacity-40" onClick={goNext} disabled={!v0}>Next →</button>
           </div>
         )}
 
@@ -110,7 +117,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
                 <button key={n} className={`px-5 py-2.5 rounded-xl font-bold transition-all ${String(n) === count ? "bg-forest text-cream" : "bg-cream-2 text-foreground border border-border hover:bg-cream-3"}`} onClick={() => setCount(String(n))}>{n}</button>
               ))}
             </div>
-            <button className="w-full py-4 rounded-xl bg-forest font-bold text-cream shadow-[0_4px_20px_rgba(26,58,42,.3)] hover:bg-forest-2 active:scale-[0.96] transition-all disabled:opacity-40" onClick={handleCount} disabled={!v1}>Next →</button>
+            <button className="w-full py-4 rounded-xl bg-forest font-bold text-cream shadow-[0_4px_20px_hsla(217,91%,53%,.3)] hover:bg-forest-2 active:scale-[0.96] transition-all disabled:opacity-40" onClick={handleCount} disabled={!v1}>Next →</button>
           </div>
         )}
 
@@ -120,11 +127,11 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
             <p className="text-ink-3 text-sm">Enter the name of each housemate:</p>
             {names.map((n, i) => (
               <div key={i} className="animate-fade-up" style={{ animationDelay: `${i * 0.05}s` }}>
-                <label className="text-xs font-bold text-ink-3 tracking-wider uppercase block mb-1.5">Person {i + 1}{i === 0 ? " (you)" : ""}</label>
+                <label className="text-xs font-bold text-ink-3 tracking-wider uppercase block mb-1.5">Person {i + 1}</label>
                 <input type="text" className={inputClass} placeholder={`Name of person ${i + 1}`} value={n} onChange={e => setNames(p => p.map((v, j) => j === i ? e.target.value : v))} />
               </div>
             ))}
-            <button className="w-full py-4 rounded-xl bg-forest font-bold text-cream shadow-[0_4px_20px_rgba(26,58,42,.3)] hover:bg-forest-2 active:scale-[0.96] transition-all mt-1 disabled:opacity-40" onClick={goNext} disabled={!v2}>Next →</button>
+            <button className="w-full py-4 rounded-xl bg-forest font-bold text-cream shadow-[0_4px_20px_hsla(217,91%,53%,.3)] hover:bg-forest-2 active:scale-[0.96] transition-all mt-1 disabled:opacity-40" onClick={goNext} disabled={!v2}>Next →</button>
           </div>
         )}
 
@@ -146,7 +153,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
                 </select>
               </div>
             ))}
-            <button className="w-full py-4 rounded-xl bg-forest font-bold text-cream shadow-[0_4px_20px_rgba(26,58,42,.3)] hover:bg-forest-2 active:scale-[0.96] transition-all mt-1 disabled:opacity-40" onClick={handleFinish} disabled={!v3}>Generate House Code →</button>
+            <button className="w-full py-4 rounded-xl bg-forest font-bold text-cream shadow-[0_4px_20px_hsla(217,91%,53%,.3)] hover:bg-forest-2 active:scale-[0.96] transition-all mt-1 disabled:opacity-40" onClick={handleFinish} disabled={!v3}>Generate House Code →</button>
           </div>
         )}
 
@@ -161,7 +168,28 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
               <p className="text-cream/35 text-xs">{houseName}</p>
             </div>
             <button className="w-full py-3.5 rounded-xl bg-cream-2 text-foreground font-bold border border-border hover:bg-cream-3 transition-all" onClick={copyCode}>{copied ? "✅ Copied!" : "📋 Copy code"}</button>
-            <button className="w-full py-4 rounded-xl bg-forest font-bold text-cream shadow-[0_4px_20px_rgba(26,58,42,.3)] hover:bg-forest-2 active:scale-[0.96] transition-all" onClick={handleEnter}>Enter as {names[0]} →</button>
+            <button className="w-full py-4 rounded-xl bg-forest font-bold text-cream shadow-[0_4px_20px_hsla(217,91%,53%,.3)] hover:bg-forest-2 active:scale-[0.96] transition-all" onClick={() => setStep(5)}>Continue →</button>
+          </div>
+        )}
+
+        {step === 5 && (
+          <div className="flex flex-col gap-3 animate-fade-up">
+            <p className="text-ink-3 text-sm mb-1">Select your name to enter the dashboard:</p>
+            {memberObjs.map((m, i) => (
+              <button
+                key={m.id}
+                className={`w-full p-5 rounded-xl border-2 bg-card text-left font-semibold flex items-center gap-4 transition-all duration-200 hover:border-forest hover:bg-forest/5 hover:translate-x-1 animate-fade-up ${chosen === m.id ? "border-forest bg-forest/5" : "border-border"}`}
+                style={{ animationDelay: `${i * 0.07}s` }}
+                onClick={() => chooseMember(m)}
+              >
+                <Avatar name={m.name} size={50} radius={16} fontSize={20} />
+                <div className="flex-1">
+                  <div className="text-lg">{m.name}</div>
+                  <div className="font-normal text-xs text-ink-3 mt-0.5">Joined {fmtDate(m.joined_at, { month: "short", day: "numeric" })}</div>
+                </div>
+                {chosen === m.id && <span className="text-forest text-xl">✓</span>}
+              </button>
+            ))}
           </div>
         )}
       </div>
