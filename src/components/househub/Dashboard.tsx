@@ -392,8 +392,8 @@ const Dashboard = ({
             purchases={purchases}
             getMember={getMember}
             nextBuyerByItem={nextBuyerByItem}
-            lastBoughtMap={lastBoughtMap}
             activeSupplies={activeSupplies}
+            suppliesRotationOrder={suppliesRotationOrder}
           />
         )}
         {tab === "history" && (

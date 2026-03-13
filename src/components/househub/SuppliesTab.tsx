@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { Member, Purchase, Supply, fmtDate } from "@/lib/househub";
+import { Member, Purchase, Supply } from "@/lib/househub";
 import { CheckCircle2 } from "lucide-react";
 
 interface SuppliesTabProps {
-  user:            Member | null;
-  members:         Member[];
-  doBuy:           (supply: Supply) => void;
-  purchases:       Purchase[];
-  getMember:       (id: string) => Member | undefined;
-  nextBuyerByItem: Record<string, Member | null>;
-  lastBoughtMap:   Record<string, Purchase>;
-  activeSupplies:  Supply[];
+  user:                  Member | null;
+  members:               Member[];
+  doBuy:                 (supply: Supply) => void;
+  purchases:             Purchase[];
+  getMember:             (id: string) => Member | undefined;
+  nextBuyerByItem:       Record<string, Member | null>;
+  activeSupplies:        Supply[];
+  suppliesRotationOrder: string[];
 }
 
 // Celebration messages per supply item
@@ -23,7 +23,7 @@ const SUPPLY_MESSAGES: Record<string, { emoji: string; msgs: string[] }> = {
       "No thirst on your watch! 🙌",
     ],
   },
-  "Gas":   {
+  "Gas": {
     emoji: "🔥",
     msgs: [
       "Cooking is back on! Legend!",
@@ -55,12 +55,12 @@ const SuppliesTab = ({
   purchases,
   getMember,
   nextBuyerByItem,
-  lastBoughtMap,
   activeSupplies,
+  suppliesRotationOrder,
 }: SuppliesTabProps) => {
-  const [confirmingItem, setConfirmingItem]   = useState<string | null>(null);
-  const [celebrationMap, setCelebrationMap]   = useState<Record<string, { emoji: string; msg: string } | null>>({});
-  const [pressingItem,   setPressingItem]     = useState<string | null>(null);
+  const [confirmingItem, setConfirmingItem] = useState<string | null>(null);
+  const [celebrationMap, setCelebrationMap] = useState<Record<string, { emoji: string; msg: string } | null>>({});
+  const [pressingItem,   setPressingItem]   = useState<string | null>(null);
 
   const handleConfirm = (supply: Supply) => {
     if (pressingItem) return;
@@ -93,10 +93,20 @@ const SuppliesTab = ({
             const isPressing   = pressingItem   === s.id;
             const celebration  = celebrationMap[s.id];
 
+            // ── Upcoming turns for this supply item ──────────────────
+            const nextBuyerId = nextBuyer?.id;
+            const startIdx = suppliesRotationOrder.indexOf(nextBuyerId ?? "");
+            const upcomingTurns: Member[] = startIdx === -1
+              ? members
+              : [
+                  ...suppliesRotationOrder.slice(startIdx),
+                  ...suppliesRotationOrder.slice(0, startIdx),
+                ].map(id => members.find(m => m.id === id)).filter(Boolean) as Member[];
+
             return (
               <div
                 key={s.id}
-                className={`rounded-2xl border p-4 transition-all duration-400 ${
+                className={`rounded-2xl border transition-all duration-400 ${
                   celebration
                     ? "bg-emerald-50/60 border-emerald-200/70 shadow-md dark:bg-emerald-950/20 dark:border-emerald-800/30"
                     : isMyTurn
@@ -105,7 +115,8 @@ const SuppliesTab = ({
                 }`}
                 style={{ transition: "all 0.35s cubic-bezier(0.4,0,0.2,1)" }}
               >
-                <div className="flex items-center justify-between">
+                {/* Card header */}
+                <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl transition-transform duration-300 ${
@@ -153,7 +164,7 @@ const SuppliesTab = ({
                 {/* Confirm row */}
                 {isMyTurn && isConfirming && !celebration && (
                   <div
-                    className="mt-3 flex gap-2"
+                    className="px-4 pb-4 flex gap-2"
                     style={{ animation: "slide-up 0.3s cubic-bezier(0.34,1.56,0.64,1)" }}
                   >
                     <button
@@ -180,7 +191,7 @@ const SuppliesTab = ({
                 {/* Celebration message */}
                 {celebration && (
                   <div
-                    className="mt-3 flex items-center gap-2"
+                    className="px-4 pb-4 flex items-center gap-2"
                     style={{ animation: "slide-up 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}
                   >
                     <span className="text-xl">{celebration.emoji}</span>
@@ -189,42 +200,49 @@ const SuppliesTab = ({
                     </p>
                   </div>
                 )}
+
+                {/* ── Upcoming Turns list ── */}
+                {upcomingTurns.length > 0 && (
+                  <div className="border-t border-border/50">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-4 pt-3 pb-2">
+                      Upcoming Turns
+                    </p>
+                    {upcomingTurns.map((m, i) => {
+                      const isMe   = m.id === user?.id;
+                      const isNext = i === 0;
+                      return (
+                        <div
+                          key={`${s.id}-${m.id}-${i}`}
+                          className={`flex items-center gap-3 px-4 py-3 border-b border-border/40 last:border-b-0 transition-colors duration-200
+                            ${isNext ? "bg-primary/5" : "hover:bg-muted/40"}`}
+                        >
+                          <span className={`font-display font-bold w-5 shrink-0 text-sm ${isNext ? "text-primary" : "text-muted-foreground"}`}>
+                            {i + 1}.
+                          </span>
+                          <span className="flex-1 font-medium text-foreground">
+                            <span className={isMe ? "text-primary font-bold" : ""}>
+                              {m.name}
+                            </span>
+                            {isMe && (
+                              <span className="ml-1.5 text-xs text-muted-foreground">(You)</span>
+                            )}
+                            {isNext && !isMe && (
+                              <span className="ml-2 text-xs font-bold text-primary">← next</span>
+                            )}
+                            {isNext && isMe && (
+                              <span className="ml-2 text-xs font-bold text-primary">← next</span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       </section>
-
-      {/* SECTION 2 — Last bought per item */}
-      <section>
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
-          Last Bought
-        </h3>
-        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-          {activeSupplies.map(s => {
-            const last  = lastBoughtMap[s.id];
-            const buyer = last ? getMember(last.member_id) : null;
-            return (
-              <div
-                key={s.id}
-                className="flex items-center justify-between px-5 py-3.5 border-b border-border/50 last:border-b-0 hover:bg-muted/30 transition-colors duration-200"
-              >
-                <span className="flex items-center gap-2.5 font-medium text-foreground">
-                  <span className="text-lg">{s.icon}</span>
-                  <span className="font-semibold">{s.label}</span>
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {buyer
-                    ? `${buyer.name} — ${fmtDate(last!.date, { month: "short", day: "numeric" })}`
-                    : <span className="italic">Not recorded</span>}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-
 
       <style>{`
         @keyframes pop-in {
