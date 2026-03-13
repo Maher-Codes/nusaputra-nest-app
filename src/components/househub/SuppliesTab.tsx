@@ -222,78 +222,7 @@ const SuppliesTab = ({
         </div>
       </section>
 
-      {/* SECTION 3 — Purchase History */}
-      <section>
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
-          Purchase History
-        </h3>
-        {purchases.length > 0 ? (
-          <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-            {purchases.slice(0, 10).map((p, i) => {
-              const m    = getMember(p.member_id);
-              const sup  = SUPPLIES.find(s => s.label === p.item_name);
-              return (
-                <div
-                  key={p.id}
-                  className="flex items-center justify-between px-5 py-3.5 border-b border-border/50 last:border-b-0 hover:bg-muted/30 transition-colors duration-200"
-                  style={{ animationDelay: `${i * 0.04}s` }}
-                >
-                  <span className="font-medium text-foreground flex items-center gap-2">
-                    <span>{sup?.icon ?? "🛒"}</span>
-                    <span className="font-bold">{m?.name ?? "—"}</span>
-                    <span className="text-muted-foreground">—</span>
-                    <span>{p.item_name}</span>
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {fmtDate(p.date, { month: "short", day: "numeric" })}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center">
-            <ShoppingBag size={32} className="mx-auto text-muted-foreground/40 mb-2" />
-            <p className="text-sm text-muted-foreground">No purchases recorded yet.</p>
-          </div>
-        )}
-      </section>
 
-      {/* SECTION 4 — Member rotation */}
-      <section>
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
-          Member Rotation
-        </h3>
-        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-          {members.map((m, i) => {
-            const isMe       = m.id === user?.id;
-            const theirItems = SUPPLIES.filter(s => nextBuyerByItem[s.label]?.id === m.id);
-            return (
-              <div
-                key={m.id}
-                className={`flex items-center gap-3 px-5 py-3.5 border-b border-border/50 last:border-b-0 transition-colors duration-200 ${
-                  theirItems.length > 0 ? "bg-accent/5" : "hover:bg-muted/30"
-                }`}
-              >
-                <span className="font-display font-bold text-muted-foreground w-5 shrink-0 text-sm">
-                  {i + 1}.
-                </span>
-                <span className="flex-1 font-medium text-foreground">
-                  <span className={isMe ? "text-primary font-bold" : ""}>{m.name}</span>
-                  {isMe && <span className="ml-1.5 text-xs text-muted-foreground">(You)</span>}
-                </span>
-                {theirItems.length > 0 && (
-                  <span className="flex gap-1 text-base">
-                    {theirItems.map(s => (
-                      <span key={s.id} title={s.label}>{s.icon}</span>
-                    ))}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
 
       <style>{`
         @keyframes pop-in {

@@ -68,6 +68,21 @@ export interface Alert {
   icon: string;
 }
 
+export interface HouseSettings {
+  id:                 string;
+  house_id:           string;
+  supplies:           Supply[];          // custom supply items
+  cleaning_enabled:   boolean;
+  cleaning_frequency: "weekly" | "biweekly" | "monthly";
+  cleaning_day:       number;            // 0=Sun … 6=Sat
+  rotation_type:      "round_robin" | "free_for_all";
+  created_at:         string;
+}
+
+// Day label helper
+export const DAY_LABELS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+export const DAY_SHORT  = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
 // --- Constants ---
 
 export const AV_COLORS = [

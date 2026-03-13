@@ -207,4 +207,75 @@ export const houseService = {
 
     if (error) throw error;
   },
+
+  // ----------------------------------------------------------
+  // HOUSE SETTINGS
+  // ----------------------------------------------------------
+
+  /** Saves (upserts) house settings. Called once at end of setup wizard. */
+  async saveHouseSettings(
+    houseId: string,
+    settings: {
+      supplies:           { id: string; label: string; icon: string; col: string; bg: string }[];
+      cleaning_enabled:   boolean;
+      cleaning_frequency: string;
+      cleaning_day:       number;
+      rotation_type:      string;
+    }
+  ): Promise<void> {
+    const { error } = await supabase
+      .from("house_settings")
+      .upsert({
+        house_id:           houseId,
+        supplies:           settings.supplies,
+        cleaning_enabled:   settings.cleaning_enabled,
+        cleaning_frequency: settings.cleaning_frequency,
+        cleaning_day:       settings.cleaning_day,
+        rotation_type:      settings.rotation_type,
+      }, { onConflict: "house_id" });
+
+    if (error) throw error;
+  },
+
+  /** Fetches house settings. Returns null if not set up yet (legacy houses). */
+  async getHouseSettings(houseId: string) {
+    const { data, error } = await supabase
+      .from("house_settings")
+      .select("*")
+      .eq("house_id", houseId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  },
+
+  /** Adds a new supply item to the house settings supplies array. */
+  async addSupplyItem(
+    houseId: string,
+    currentSupplies: { id: string; label: string; icon: string; col: string; bg: string }[],
+    newItem:         { id: string; label: string; icon: string; col: string; bg: string }
+  ): Promise<void> {
+    const updated = [...currentSupplies, newItem];
+    const { error } = await supabase
+      .from("house_settings")
+      .update({ supplies: updated })
+      .eq("house_id", houseId);
+
+    if (error) throw error;
+  },
+
+  /** Removes a supply item from the house settings supplies array. */
+  async removeSupplyItem(
+    houseId: string,
+    currentSupplies: { id: string; label: string; icon: string; col: string; bg: string }[],
+    itemId: string
+  ): Promise<void> {
+    const updated = currentSupplies.filter(s => s.id !== itemId);
+    const { error } = await supabase
+      .from("house_settings")
+      .update({ supplies: updated })
+      .eq("house_id", houseId);
+
+    if (error) throw error;
+  },
 };
