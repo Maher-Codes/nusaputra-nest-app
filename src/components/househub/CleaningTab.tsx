@@ -1,107 +1,153 @@
 import { useState } from "react";
 import { Member, CleanRecord, RotationEntry, fmtDate } from "@/lib/househub";
-import Avatar from "./Avatar";
-import { Brush, Calendar, Home, CheckCircle2 } from "lucide-react";
 
 interface CleaningTabProps {
-  rotation: RotationEntry[];
-  myNextClean: RotationEntry | undefined;
-  user: Member | null;
-  getMember: (id: string) => Member | undefined;
-  isMyTurnClean: boolean;
-  doClean: () => void;
-  cleanRecs: CleanRecord[];
+  rotation:       RotationEntry[];
+  myNextClean:    RotationEntry | undefined;
+  user:           Member | null;
+  getMember:      (id: string) => Member | undefined;
+  isMyTurnClean:  boolean;
+  doClean:        () => void;
+  cleanRecs:      CleanRecord[];
 }
 
-const CleaningTab = ({ rotation, myNextClean, user, getMember, isMyTurnClean, doClean, cleanRecs }: CleaningTabProps) => {
+const CleaningTab = ({
+  rotation,
+  myNextClean,
+  user,
+  getMember,
+  isMyTurnClean,
+  doClean,
+  cleanRecs,
+}: CleaningTabProps) => {
   const [justDone, setJustDone] = useState(false);
-  const done = justDone || (isMyTurnClean && cleanRecs.some(r => r.member_id === user?.id && Date.now() - new Date(r.cleaning_date).getTime() < 7 * 86400000));
-  const handle = () => { setJustDone(true); doClean(); };
-  const myLastClean = cleanRecs.filter(r => r.member_id === user?.id).sort((a, b) => new Date(b.cleaning_date).getTime() - new Date(a.cleaning_date).getTime())[0];
+
+  // "done" is true if the user just pressed the button OR if they have
+  // a clean record within the last 7 days — uses DB column `date` not `cleaning_date`
+  const done =
+    justDone ||
+    (isMyTurnClean &&
+      cleanRecs.some(
+        r =>
+          r.member_id === user?.id &&
+          Date.now() - new Date(r.date).getTime() < 7 * 86400000
+      ));
+
+  const handle = () => {
+    setJustDone(true);
+    doClean();
+  };
+
+  const nextClean = rotation[0];
+  const nextMbr   = getMember(nextClean?.memberId ?? "");
+  const lastClean = cleanRecs[0];
+  const lastMbr   = getMember(lastClean?.member_id ?? "");
 
   return (
-    <div className="flex flex-col gap-4">
-      <p className="font-display font-bold italic text-xs text-muted-foreground uppercase tracking-widest animate-fade-up" style={{ animationDelay: ".03s" }}>My Cleaning Schedule</p>
+    <div className="flex flex-col gap-6">
 
-      {/* My next / current card */}
-      <div
-        className={`rounded-3xl p-6 shadow-md border animate-fade-up transition-all ${done ? "bg-primary/10 border-primary/20" : isMyTurnClean ? "bg-primary/10 border-primary/30" : "bg-card border-border"}`}
-        style={{ animationDelay: ".06s" }}
-      >
-        <div className="flex items-center gap-4 mb-4">
-          {user && <Avatar name={user.name} size={60} radius={20} fontSize={25} />}
-          <div className="flex-1">
-            <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-1">
-              {done ? "This Week ✅" : isMyTurnClean ? "⚡ This Saturday — Your Turn!" : "Your Next Cleaning Day"}
-            </p>
-            <h2 className="font-display font-black text-2xl text-primary leading-tight">
-              {myNextClean ? fmtDate(myNextClean.date, { weekday: "long", day: "numeric", month: "long" }) : "—"}
-            </h2>
-            {myLastClean && <p className="text-muted-foreground text-sm mt-1.5">Last cleaned: {fmtDate(myLastClean.cleaning_date, { day: "numeric", month: "long" })}</p>}
-          </div>
-        </div>
+      {/* SECTION 1 — Next Cleaning */}
+      <section>
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+          Next Cleaning
+        </h3>
+        <div className={`rounded-xl border p-5 transition-all ${
+          isMyTurnClean && !done
+            ? "bg-primary/5 border-primary/30"
+            : "bg-card shadow-sm"
+        }`}>
+          <p className="font-display font-black text-2xl text-foreground mb-1">
+            {nextClean ? fmtDate(nextClean.date, { weekday: "long" }) : "—"}
+          </p>
+          <p className="text-sm text-foreground font-medium">
+            Responsible:{" "}
+            <span className="font-bold">{nextMbr?.name ?? "—"}</span>
+          </p>
 
-        {isMyTurnClean && !done && (
-          <div className="flex flex-col gap-2.5">
-            <p className="text-muted-foreground text-sm leading-relaxed">Once you've finished cleaning the house, tap below to record it:</p>
-            <button className="w-full py-4 rounded-xl bg-primary font-bold text-primary-foreground shadow-md hover:opacity-90 active:scale-[0.96] transition-all text-base flex items-center justify-center gap-2" onClick={handle}>
-              <Home size={20} />
-              I cleaned the house!
-            </button>
-            <button className="w-full py-3.5 rounded-xl bg-transparent text-muted-foreground border border-border font-bold hover:bg-muted/50 transition-all font-sans">Not yet – remind me later</button>
-          </div>
-        )}
-
-        {done && (
-          <div className="animate-pop text-center py-1.5 flex flex-col items-center gap-2">
-            <CheckCircle2 size={32} className="text-primary" />
-            <p className="font-display font-bold text-base text-primary">Amazing! The house is clean. Great job!</p>
-          </div>
-        )}
-
-        {!isMyTurnClean && !done && myNextClean && (
-          <div className="bg-primary/5 rounded-xl px-4 py-3 flex items-center gap-3">
-             <Calendar size={18} className="text-primary" />
-             <p className="text-primary font-bold text-sm">Mark your calendar — {fmtDate(myNextClean.date, { weekday: "long", day: "numeric", month: "long" })}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Full rotation */}
-      <p className="font-display font-bold italic text-xs text-muted-foreground uppercase tracking-widest animate-fade-up" style={{ animationDelay: ".12s" }}>Full Rotation (Saturdays)</p>
-      <p className="text-muted-foreground text-sm px-0.5 animate-fade-up font-medium" style={{ animationDelay: ".14s" }}>Cleaning rotates every Saturday. Once everyone has had a turn, it repeats.</p>
-
-      {rotation.map((r, i) => {
-        const m = getMember(r.memberId);
-        const isCurrent = i === 0;
-        const isMe = r.memberId === user?.id;
-        return (
-          <div
-            key={`${r.memberId}-${i}`}
-            className={`flex items-center gap-3.5 p-4 rounded-3xl border mb-0 transition-all animate-fade-up ${isCurrent ? "border-primary bg-primary/10" : isMe ? "border-accent/30 bg-accent/5" : "border-border bg-card shadow-sm"}`}
-            style={{ animationDelay: `${0.16 + i * 0.06}s`, opacity: i > 3 && !isCurrent && !isMe ? 0.65 : 1 }}
-          >
-            <div
-              className={`w-9 h-9 rounded-lg flex items-center justify-center font-display font-bold text-sm shrink-0 shadow-sm ${isCurrent ? "bg-primary text-primary-foreground" : isMe ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"}`}
+          {isMyTurnClean && !done && (
+            <button
+              className="mt-4 w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold shadow-sm hover:bg-primary/90 transition-colors"
+              onClick={handle}
             >
-              {i + 1}
-            </div>
-            {m && <Avatar name={m.name} size={40} radius={12} fontSize={16} />}
-            <div className="flex-1">
-              <p className="font-bold text-sm text-foreground">
-                {m?.name}
-                {isCurrent && <span className="ml-2 text-[10px] text-primary font-extrabold bg-primary/10 px-2 py-0.5 rounded-md">NOW</span>}
-                {isMe && !isCurrent && <span className="ml-2 text-[10px] text-accent font-extrabold bg-accent/10 px-2 py-0.5 rounded-md">YOU</span>}
-              </p>
-              <p className="text-muted-foreground text-xs mt-0.5">{fmtDate(r.date, { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</p>
-            </div>
-            {isCurrent && <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-primary/10 text-primary uppercase tracking-wider">
-              <Brush size={12} />
-              This Sat
-            </span>}
+              I cleaned the house
+            </button>
+          )}
+
+          {done && (
+            <p className="mt-3 text-sm font-bold text-primary">
+              ✓ Cleaning marked as done!
+            </p>
+          )}
+
+          {!isMyTurnClean && nextMbr && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Waiting for{" "}
+              <span className="font-semibold text-foreground">{nextMbr.name}</span>{" "}
+              to clean.
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* SECTION 2 — Last Cleaning */}
+      <section>
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+          Last Cleaning
+        </h3>
+        {lastClean ? (
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <p className="text-base font-bold text-foreground">
+              {lastMbr?.name ?? "—"}
+              <span className="text-muted-foreground font-normal mx-1">—</span>
+              {/* DB column is `date`, not `cleaning_date` */}
+              {fmtDate(lastClean.date, { month: "long", day: "numeric" })}
+            </p>
           </div>
-        );
-      })}
+        ) : (
+          <p className="text-sm text-muted-foreground">No cleaning recorded yet.</p>
+        )}
+      </section>
+
+      {/* SECTION 3 — Upcoming rotation */}
+      <section>
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+          Upcoming Turns
+        </h3>
+        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+          {rotation.length > 0 ? (
+            rotation.map((r, i) => {
+              const m    = getMember(r.memberId);
+              const isMe = r.memberId === user?.id;
+              return (
+                <div
+                  key={`${r.memberId}-${i}`}
+                  className="flex items-center gap-3 px-5 py-3 border-b border-border/50 last:border-b-0"
+                >
+                  <span className="font-display font-bold text-muted-foreground w-5 shrink-0">
+                    {i + 1}.
+                  </span>
+                  <span className="flex-1 font-medium text-foreground">
+                    <span className={isMe ? "text-primary font-bold" : ""}>
+                      {m?.name ?? "—"}
+                    </span>
+                    {isMe && (
+                      <span className="ml-1.5 text-xs text-muted-foreground">(You)</span>
+                    )}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {fmtDate(r.date, { weekday: "short", month: "short", day: "numeric" })}
+                  </span>
+                </div>
+              );
+            })
+          ) : (
+            <p className="text-sm text-muted-foreground px-5 py-4">
+              No upcoming schedule yet.
+            </p>
+          )}
+        </div>
+      </section>
+
     </div>
   );
 };

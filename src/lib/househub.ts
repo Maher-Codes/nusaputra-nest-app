@@ -1,14 +1,21 @@
-// Types
+// ============================================================
+// househub.ts — Types & Utilities
+// All interfaces match Supabase DB column names exactly.
+// ============================================================
+
+// --- Types ---
+
 export interface Member {
   id: string;
   name: string;
-  joined_at: string;
+  house_id: string;
+  created_at: string;
 }
 
 export interface House {
   id: string;
   name: string;
-  code: string;
+  house_code: string;      // DB column is house_code, not code
   created_at: string;
 }
 
@@ -16,16 +23,22 @@ export interface CleanRecord {
   id: string;
   member_id: string;
   house_id: string;
-  cleaning_date: string;
-  completed: boolean;
+  date: string;            // DB column is date, not cleaning_date
 }
 
 export interface Purchase {
   id: string;
   member_id: string;
-  item_id: string;
+  house_id: string;
+  item_name: string;       // DB column is item_name (no item_id)
+  date: string;            // DB column is date, not purchase_date
+}
+
+export interface SupplyResponsibility {
+  id: string;
+  house_id: string;
   item_name: string;
-  purchase_date: string;
+  next_member_id: string;
 }
 
 export interface ActivityLog {
@@ -55,32 +68,53 @@ export interface Alert {
   icon: string;
 }
 
-// Constants
-export const AV_COLORS = ["#2A9D8F", "#3A86FF", "#F4A261", "#21867A", "#2563EB", "#D97706", "#1F2937", "#4F46E5"];
+// --- Constants ---
 
-export const SUPPLIES: Supply[] = [
-  { id: "gas",    label: "Gas",    icon: "🔥", bg: "rgba(244, 162, 97, 0.1)", col: "#F4A261" },
-  { id: "water",  label: "Water",  icon: "💧", bg: "rgba(58, 134, 255, 0.1)", col: "#3A86FF" },
-  { id: "soap",   label: "Soap",   icon: "🫧", bg: "rgba(42, 157, 143, 0.1)", col: "#2A9D8F" },
-  { id: "sponge", label: "Sponge", icon: "🧽", bg: "rgba(244, 162, 97, 0.08)", col: "#D97706" },
+export const AV_COLORS = [
+  "#2A9D8F", "#3A86FF", "#F4A261",
+  "#21867A", "#2563EB", "#D97706",
+  "#1F2937", "#4F46E5",
 ];
 
-// Utilities
+// Supplies list — item_name values must match what's stored in DB
+export const SUPPLIES: Supply[] = [
+  { id: "Water",       label: "Water",       icon: "💧", bg: "rgba(58, 134, 255, 0.1)",  col: "#3A86FF" },
+  { id: "Gas",         label: "Gas",         icon: "🔥", bg: "rgba(244, 162, 97, 0.1)",  col: "#F4A261" },
+  { id: "Soap & Sponge", label: "Soap & Sponge", icon: "🫧", bg: "rgba(42, 157, 143, 0.1)", col: "#2A9D8F" },
+];
+
+// --- Utility Functions ---
+
 export const avatarColor = (name: string): string => {
   let h = 0;
   for (const c of (name || "")) h = (h * 31 + c.charCodeAt(0)) % AV_COLORS.length;
   return AV_COLORS[h];
 };
 
-export const uid = () => `id_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-export const now = () => new Date().toISOString();
-export const genCode = () => String(Math.floor(100000 + Math.random() * 900000));
+export const uid = () =>
+  `id_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
-export const fmtDate = (iso: string | Date, opts: Intl.DateTimeFormatOptions = {}) =>
-  new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", ...opts });
+export const now = () => new Date().toISOString();
+
+export const genCode = () =>
+  String(Math.floor(100000 + Math.random() * 900000));
+
+export const fmtDate = (
+  iso: string | Date,
+  opts: Intl.DateTimeFormatOptions = {}
+) =>
+  new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    ...opts,
+  });
 
 export const fmtShort = (iso: string | Date) =>
-  new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+  });
 
 export const ago = (iso: string) => {
   const d = Date.now() - new Date(iso).getTime();
@@ -100,23 +134,39 @@ export const greet = () => {
 };
 
 export const todayFull = () =>
-  new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  new Date().toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
 export const nextSat = (from: Date = new Date()): Date => {
   const d = new Date(from);
   d.setHours(0, 0, 0, 0);
   const day = d.getDay();
-  const diff = day === 6 ? 7 : (6 - day);
+  const diff = day === 6 ? 7 : 6 - day;
   d.setDate(d.getDate() + diff);
   return d;
 };
 
-export const buildRotation = (members: Member[], lastCleanerIdx = 0): RotationEntry[] => {
+/**
+ * Builds the upcoming cleaning rotation.
+ * lastCleanerIdx = index in members[] of who cleaned last.
+ * The next person is (lastCleanerIdx + 1) % members.length.
+ */
+export const buildRotation = (
+  members: Member[],
+  lastCleanerIdx = 0
+): RotationEntry[] => {
   if (!members.length) return [];
   const start = (lastCleanerIdx + 1) % members.length;
-  const ordered = [...members.slice(start), ...members.slice(0, start)];
+  const ordered = [
+    ...members.slice(start),
+    ...members.slice(0, start),
+  ];
   let sat = nextSat();
-  return ordered.map(m => {
+  return ordered.map((m) => {
     const d = new Date(sat);
     sat = nextSat(new Date(sat.getTime() + 86400000));
     return { memberId: m.id, date: d };
