@@ -10,8 +10,10 @@ import SuppliesTab from "./SuppliesTab";
 import HistoryTab  from "./HistoryTab";
 import { houseService } from "@/services/houseService";
 import { supabase } from "@/integrations/supabase/client";
-import { LogOut, Share2, Check } from "lucide-react";
+import { LogOut, Share2, Check, Menu } from "lucide-react";
 import { notificationService } from "@/services/notificationService";
+import HouseSettingsScreen from "./HouseSettings";
+
 
 interface DashboardProps {
   initialUser:                   Member;
@@ -25,6 +27,7 @@ interface DashboardProps {
   initialCleaningEnabled:        boolean;
   initialCleaningRotationOrder:  string[];
   initialSuppliesRotationOrder:  string[];
+  initialHouseSettings:          any;
   onLeaveHouse:                  () => void;
 }
 
@@ -58,6 +61,7 @@ const Dashboard = ({
   initialCleaningEnabled,
   initialCleaningRotationOrder,
   initialSuppliesRotationOrder,
+  initialHouseSettings,
   onLeaveHouse,
 }: DashboardProps) => {
 
@@ -65,7 +69,7 @@ const Dashboard = ({
   const motivationalMessage = useMemo(() => 
     MOTIVATIONAL_MESSAGES[Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)], 
   []);
-  const [members]                      = useState(initialMembers);
+  const [members,      setMembers]     = useState(initialMembers);
   const [rotation,     setRotation]    = useState(initialRotation);
   const [cleanRecs,    setCleanRecs]   = useState(initialCleanRecs);
   const [purchases,    setPurchases]   = useState(initialPurchases);
@@ -75,12 +79,16 @@ const Dashboard = ({
   const [user]                         = useState(initialUser);
   const [house]                        = useState(initialHouse);
   const [cleaningEnabled]              = useState(initialCleaningEnabled);
-  const [cleaningRotationOrder]        = useState(initialCleaningRotationOrder);
-  const [suppliesRotationOrder]        = useState(initialSuppliesRotationOrder);
+  const [cleaningRotationOrder, setCleaningRotationOrder] = useState(initialCleaningRotationOrder);
+  const [suppliesRotationOrder, setSuppliesRotationOrder] = useState(initialSuppliesRotationOrder);
+  const [houseSettingsData, setHouseSettingsData] = useState(initialHouseSettings);
+
   const [toast,        setToast]       = useState<{ msg: string; id: number } | null>(null);
   const [undoAction,   setUndoAction]  = useState<UndoAction | null>(null);
   const [showLeave,    setShowLeave]   = useState(false);
   const [shared,       setShared]      = useState(false);
+  const [sidebarOpen,  setSidebarOpen]  = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [tabAnim,      setTabAnim]     = useState(false);
   const undoTimer                      = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -191,17 +199,19 @@ const Dashboard = ({
 
     const newRec: CleanRecord = { id: tempId, member_id: user.id, house_id: house.id, date: today };
     setCleanRecs(prev => [newRec, ...prev]);
-    setRotation(() => {
-      // Build ordered members using user-defined cleaning rotation order
-      const orderedMembers = cleaningRotationOrder.length
-        ? cleaningRotationOrder.map(id => members.find(m => m.id === id)).filter(Boolean) as Member[]
-        : members;
-      const lastCleanerIdx = orderedMembers.findIndex(m => m.id === user.id);
-      return buildRotation(orderedMembers, Math.max(0, lastCleanerIdx));
-    });
+    
+    const excludedFromCleaning = houseSettingsData?.excluded_members?.["cleaning"] ?? [];
+    const activeForCleaning    = cleaningRotationOrder.filter(id => !excludedFromCleaning.includes(id));
+    const orderedMembers       = activeForCleaning
+      .map(id => members.find(m => m.id === id))
+      .filter(Boolean) as Member[];
+
+    const lastCleanerIdx = orderedMembers.findIndex(m => m.id === user.id);
+    const newRotation = buildRotation(orderedMembers, Math.max(0, lastCleanerIdx));
+    setRotation(newRotation);
 
     // Notify the next cleaner if it's them on this device
-    const newNextCleaner = members.find(m => m.id === rotation[0]?.memberId);
+    const newNextCleaner = members.find(m => m.id === newRotation[0]?.memberId);
     if (newNextCleaner?.id === user.id) {
       notificationService.showLocal(
         "🧹 It's your turn to clean!",
@@ -227,7 +237,7 @@ const Dashboard = ({
         if (realId) { try { await supabase.from("clean_records").delete().eq("id", realId); } catch (e) { console.error(e); } }
       },
     });
-  }, [user, house, cleanRecs, rotation, members, cleaningRotationOrder, showToast]);
+  }, [user, house, cleanRecs, rotation, members, cleaningRotationOrder, houseSettingsData, showToast]);
 
   // ── doBuy ─────────────────────────────────────────────────────────────
   const doBuy = useCallback(async (supply: Supply) => {
@@ -239,9 +249,15 @@ const Dashboard = ({
 
     // Use suppliesRotationOrder (user-defined) instead of raw members insertion order
     const rotationOrder  = suppliesRotationOrder.length ? suppliesRotationOrder : members.map(m => m.id);
-    const currentBuyerIdx = rotationOrder.indexOf(currentBuyerId);
-    const nextBuyerId    = rotationOrder[(currentBuyerIdx + 1) % rotationOrder.length];
-    const nextMember     = members.find(m => m.id === nextBuyerId) ?? members[0];
+    
+    const excludedFromItem = houseSettingsData?.excluded_members?.[supply.label] ?? [];
+    const activeForItem    = rotationOrder.filter(id => !excludedFromItem.includes(id));
+
+    if (activeForItem.length === 0) return; // safety check
+
+    const currentBuyerIdx = activeForItem.indexOf(currentBuyerId);
+    const nextBuyerId     = activeForItem[(currentBuyerIdx + 1) % activeForItem.length];
+    const nextMember      = members.find(m => m.id === nextBuyerId) ?? members[0];
 
     const prevPurchases  = purchases;
     const prevResps      = supplyResps;
@@ -281,7 +297,7 @@ const Dashboard = ({
         }
       },
     });
-  }, [user, house, members, supplyResps, suppliesRotationOrder, purchases, showToast]);
+  }, [user, house, members, supplyResps, suppliesRotationOrder, purchases, houseSettingsData, showToast]);
 
   // ── Real-time subscriptions ───────────────────────────────────────────
   useEffect(() => {
@@ -290,6 +306,9 @@ const Dashboard = ({
     const permTimeout = setTimeout(() => {
       notificationService.requestPermission();
     }, 4000);
+
+    houseService.getHouseSettings(house.id).then(s => setHouseSettingsData(s));
+
 
     const cleanSub = supabase.channel("clean_records_changes")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "clean_records", filter: `house_id=eq.${house.id}` }, async payload => {
@@ -358,29 +377,12 @@ const Dashboard = ({
         <div className="max-w-xl mx-auto">
           <div className="flex items-center justify-between">
             <h1 className="font-display font-black text-2xl text-foreground tracking-tight">HouseHub</h1>
-            <div className="flex items-center gap-2">
-              {/* Share button — triggers native share sheet */}
-              <button
-                onClick={shareCode}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-300
-                  ${shared
-                    ? "bg-emerald-500/10 border-emerald-400/40 text-emerald-600 dark:text-emerald-400"
-                    : "bg-muted/60 border-border text-muted-foreground hover:text-foreground hover:bg-muted hover:border-border/80 hover:shadow-sm active:scale-95"
-                  }`}
-                title="Share house code"
-              >
-                {shared ? <Check size={12} /> : <Share2 size={12} />}
-                {shared ? "Shared!" : house.house_code}
-              </button>
-              {/* Leave button */}
-              <button
-                onClick={() => setShowLeave(true)}
-                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 active:scale-90"
-                title="Leave house"
-              >
-                <LogOut size={16} />
-              </button>
-            </div>
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2.5 rounded-xl bg-muted/60 border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all active:scale-90"
+            >
+              <Menu size={18} />
+            </button>
           </div>
 
           <div className="mt-7">
@@ -521,11 +523,116 @@ const Dashboard = ({
         </div>
       )}
 
+
+      {sidebarOpen && (
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            style={{ animation: "fade-in 0.2s ease both" }}
+            onClick={() => setSidebarOpen(false)}
+          />
+
+          {/* Panel */}
+          <div
+            className="fixed top-0 right-0 z-50 h-full w-72 bg-card border-l border-border shadow-2xl flex flex-col"
+            style={{ animation: "slide-in-sidebar 0.3s cubic-bezier(0.34,1.2,0.64,1) both" }}
+          >
+            {/* Header */}
+            <div className="px-6 pt-10 pb-6 border-b border-border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-display font-black text-lg text-foreground">{house.name}</p>
+                  <p className="text-xs text-muted-foreground font-mono mt-0.5">Code: {house.house_code}</p>
+                </div>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="p-2 rounded-xl hover:bg-muted transition-all text-muted-foreground hover:text-foreground"
+                >✕</button>
+              </div>
+            </div>
+
+            {/* Menu Items */}
+            <div className="flex-1 px-4 py-6 flex flex-col gap-2">
+
+              {/* House Settings */}
+              <button
+                onClick={() => { setSidebarOpen(false); setShowSettings(true); }}
+                className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl hover:bg-muted/60 transition-all text-left group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-xl group-hover:bg-primary/20 transition-all">⚙️</div>
+                <div>
+                  <p className="font-bold text-sm text-foreground">House Settings</p>
+                  <p className="text-xs text-muted-foreground">Edit members, supplies & schedule</p>
+                </div>
+              </button>
+
+              {/* Share House */}
+              <button
+                onClick={() => { setSidebarOpen(false); shareCode(); }}
+                className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl hover:bg-muted/60 transition-all text-left group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-xl group-hover:bg-blue-500/20 transition-all">📤</div>
+                <div>
+                  <p className="font-bold text-sm text-foreground">Share House</p>
+                  <p className="text-xs text-muted-foreground">Invite housemates via WhatsApp</p>
+                </div>
+              </button>
+
+              {/* Leave House */}
+              <button
+                onClick={() => { setSidebarOpen(false); setShowLeave(true); }}
+                className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl hover:bg-destructive/8 transition-all text-left group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center text-xl group-hover:bg-destructive/20 transition-all">🚪</div>
+                <div>
+                  <p className="font-bold text-sm text-destructive">Leave House</p>
+                  <p className="text-xs text-muted-foreground">Return to the home screen</p>
+                </div>
+              </button>
+
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-5 border-t border-border">
+              <p className="text-xs text-muted-foreground text-center">
+                HouseHub · {members.length} members
+              </p>
+            </div>
+
+          </div>
+        </>
+      )}
+
       <style>{`
         @keyframes slide-up { from { opacity:0; transform: translate(-50%, 16px); } to { opacity:1; transform: translate(-50%, 0); } }
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes slide-in-sidebar {
+          from { transform: translateX(100%); }
+          to   { transform: translateX(0); }
+        }
       `}</style>
+
+      {showSettings && houseSettingsData && (
+        <HouseSettingsScreen
+          house={house}
+          members={members}
+          houseSettings={houseSettingsData}
+          cleaningRotationOrder={cleaningRotationOrder}
+          suppliesRotationOrder={suppliesRotationOrder}
+          onClose={() => setShowSettings(false)}
+          onMembersChange={(newMembers) => setMembers(newMembers)}
+          onSettingsChange={setHouseSettingsData}
+          onCleaningOrderChange={setCleaningRotationOrder}
+          onSuppliesOrderChange={setSuppliesRotationOrder}
+        />
+      )}
     </div>
   );
 };
+
 
 export default Dashboard;

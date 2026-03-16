@@ -223,6 +223,7 @@ export const houseService = {
       rotation_type:           string;
       cleaning_rotation_order?: string[];
       supplies_rotation_order?: string[];
+      excluded_members?:        Record<string, string[]>;
     }
   ): Promise<void> {
     const { error } = await supabase
@@ -236,9 +237,28 @@ export const houseService = {
         rotation_type:           settings.rotation_type,
         cleaning_rotation_order: settings.cleaning_rotation_order ?? [],
         supplies_rotation_order: settings.supplies_rotation_order ?? [],
+        excluded_members:        settings.excluded_members ?? {},
       }, { onConflict: "house_id" });
 
     if (error) throw error;
+  },
+
+  /** Updates excluded members for a specific key (cleaning or item name). */
+  async updateExcludedMembers(
+    houseId:  string,
+    key:      string, // "cleaning" or supply item name like "Gas"
+    memberIds: string[]
+  ): Promise<void> {
+    const settings = await this.getHouseSettings(houseId);
+    if (!settings) return;
+    const updated = {
+      ...settings,
+      excluded_members: {
+        ...(settings.excluded_members || {}),
+        [key]: memberIds,
+      }
+    };
+    await this.saveHouseSettings(houseId, updated);
   },
 
   /** Fetches house settings. Returns null if not set up yet (legacy houses). */

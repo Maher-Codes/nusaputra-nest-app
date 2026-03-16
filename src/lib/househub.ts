@@ -78,6 +78,7 @@ export interface HouseSettings {
   rotation_type:           "round_robin" | "free_for_all";
   cleaning_rotation_order: string[];          // ordered member IDs for cleaning
   supplies_rotation_order: string[];          // ordered member IDs for supplies
+  excluded_members:        Record<string, string[]>; // key = item name or "cleaning", value = array of excluded member IDs
   created_at:              string;
 }
 

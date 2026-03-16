@@ -31,6 +31,7 @@ const Index = () => {
     cleaningEnabled:        boolean;
     cleaningRotationOrder:  string[];
     suppliesRotationOrder:  string[];
+    initialHouseSettings:   any;
   } | null>(null);
 
   // ── On mount: check for a saved session ───────────────────────────
@@ -103,6 +104,7 @@ const Index = () => {
         cleaningEnabled:        houseSettings?.cleaning_enabled ?? true,
         cleaningRotationOrder,
         suppliesRotationOrder,
+        initialHouseSettings:   houseSettings,
       });
       setScreen("app");
 
@@ -137,6 +139,7 @@ const Index = () => {
     cleaningEnabled:      boolean = true,
     cleaningRotationOrder: string[] = [],
     suppliesRotationOrder: string[] = [],
+    initialHouseSettings:  any = {},
   ) => {
     // Persist session so refresh goes straight back to dashboard
     saveSession(houseData.house_code, member.id);
@@ -153,6 +156,7 @@ const Index = () => {
       cleaningEnabled:        cleaningEnabled,
       cleaningRotationOrder:  cleaningRotationOrder.length ? cleaningRotationOrder : membersData.map(m => m.id),
       suppliesRotationOrder:  suppliesRotationOrder.length ? suppliesRotationOrder : membersData.map(m => m.id),
+      initialHouseSettings:   initialHouseSettings,
     });
     setScreen("app");
   }, []);
@@ -184,6 +188,7 @@ const Index = () => {
         initialCleaningEnabled={appData.cleaningEnabled}
         initialCleaningRotationOrder={appData.cleaningRotationOrder}
         initialSuppliesRotationOrder={appData.suppliesRotationOrder}
+        initialHouseSettings={appData.initialHouseSettings}
         onLeaveHouse={leaveHouse}
       />
     );
