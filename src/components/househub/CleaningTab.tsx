@@ -10,6 +10,7 @@ interface CleaningTabProps {
   isMyTurnClean: boolean;
   doClean:       () => void;
   cleanRecs:     CleanRecord[];
+  nextCleaningDate: Date;
 }
 
 // Celebration messages shown after logging a clean
@@ -29,6 +30,7 @@ const CleaningTab = ({
   isMyTurnClean,
   doClean,
   cleanRecs,
+  nextCleaningDate,
 }: CleaningTabProps) => {
   const [justDone,    setJustDone]   = useState(false);
   const [pressing,    setPressing]   = useState(false);
@@ -102,7 +104,7 @@ const CleaningTab = ({
         >
           <div className="flex items-start justify-between mb-1">
             <p className="font-display font-black text-2xl text-foreground">
-              {nextClean ? fmtDate(nextClean.date, { weekday: "long" }) : "—"}
+              {nextCleaningDate ? fmtDate(nextCleaningDate, { weekday: "long" }) : "—"}
             </p>
             {done && (
               <CheckCircle2

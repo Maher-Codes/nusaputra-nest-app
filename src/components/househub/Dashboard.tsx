@@ -149,6 +149,18 @@ const Dashboard = ({
   };
 
   // ── Cleaning derived state ────────────────────────────────────────────
+  const cleaningDay = houseSettingsData?.cleaning_day ?? 6;
+
+  const getNextCleaningDate = (fromDay: number): Date => {
+    const today = new Date();
+    const diff  = (fromDay - today.getDay() + 7) % 7 || 7;
+    const next  = new Date(today);
+    next.setDate(today.getDate() + diff);
+    return next;
+  };
+
+  const nextCleaningDate = getNextCleaningDate(cleaningDay);
+
   const thisRotation  = rotation[0] ?? null;
   const thisCleanMbr  = getMember(thisRotation?.memberId ?? "");
   const isMyTurnClean = thisRotation?.memberId === user?.id;
@@ -439,6 +451,7 @@ const Dashboard = ({
             setTab={switchTab}
             cleaningEnabled={cleaningEnabled}
             activeSupplies={activeSupplies}
+            nextCleaningDate={nextCleaningDate}
           />
         )}
         {tab === "cleaning" && cleaningEnabled && (
@@ -450,6 +463,7 @@ const Dashboard = ({
             isMyTurnClean={isMyTurnClean}
             doClean={doClean}
             cleanRecs={cleanRecs}
+            nextCleaningDate={nextCleaningDate}
           />
         )}
         {tab === "supplies" && (
@@ -625,7 +639,7 @@ const Dashboard = ({
           suppliesRotationOrder={suppliesRotationOrder}
           onClose={() => setShowSettings(false)}
           onMembersChange={(newMembers) => setMembers(newMembers)}
-          onSettingsChange={setHouseSettingsData}
+          onSettingsChange={(newSettings) => setHouseSettingsData(newSettings)}
           onCleaningOrderChange={setCleaningRotationOrder}
           onSuppliesOrderChange={setSuppliesRotationOrder}
         />

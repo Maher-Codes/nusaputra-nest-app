@@ -16,6 +16,7 @@ interface HomeTabProps {
   setTab:          (tab: string) => void;
   cleaningEnabled:  boolean;
   activeSupplies:   Supply[];
+  nextCleaningDate: Date;
 }
 
 const HomeTab = ({
@@ -30,6 +31,7 @@ const HomeTab = ({
   setTab,
   cleaningEnabled,
   activeSupplies,
+  nextCleaningDate,
 }: HomeTabProps) => {
   const lastPurchase  = purchases[0];
   const mySupplyItems = activeSupplies.filter(s => nextBuyerByItem[s.label]?.id === user?.id);
@@ -64,8 +66,8 @@ const HomeTab = ({
           <p className="text-sm font-medium text-muted-foreground">
             Next:{" "}
             <span className="text-foreground font-semibold">
-              {thisRotation
-                ? fmtDate(thisRotation.date, { weekday: "long", month: "short", day: "numeric" })
+              {nextCleaningDate
+                ? fmtDate(nextCleaningDate, { weekday: "long", month: "short", day: "numeric" })
                 : "—"}
             </span>
           </p>

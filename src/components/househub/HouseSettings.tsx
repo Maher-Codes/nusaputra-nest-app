@@ -487,7 +487,7 @@ const CleaningTab = ({
     try {
       const updated = { ...houseSettings, ...changes };
       await houseService.saveHouseSettings(house.id, updated);
-      onSettingsChange(updated);
+      onSettingsChange(updated); // must be called here
     } catch (err) {
       console.error("Failed to update cleaning settings:", err);
     } finally { setLoading(false); }
