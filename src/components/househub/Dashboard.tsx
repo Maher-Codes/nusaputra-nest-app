@@ -9,7 +9,8 @@ import CleaningTab from "./CleaningTab";
 import SuppliesTab from "./SuppliesTab";
 import HistoryTab  from "./HistoryTab";
 import { houseService } from "@/services/houseService";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { onValue, ref, push, set, remove } from "firebase/database";
 import { LogOut, Share2, Check, Menu } from "lucide-react";
 import { notificationService } from "@/services/notificationService";
 import HouseSettingsScreen from "./HouseSettings";
@@ -232,9 +233,16 @@ const Dashboard = ({
 
     let realId: string | null = null;
     try {
-      const { data, error } = await supabase.from("clean_records").insert({ house_id: house.id, member_id: user.id, date: today }).select().single();
-      if (error) throw error;
-      realId = data.id;
+      const recsRef = ref(db, `clean_records/${house.id}`);
+      const newRecRef = push(recsRef);
+      realId = newRecRef.key;
+      await set(newRecRef, {
+        id: realId,
+        house_id: house.id,
+        member_id: user.id,
+        date: today,
+        created_at: new Date().toISOString()
+      });
       setCleanRecs(prev => prev.map(r => r.id === tempId ? { ...r, id: realId! } : r));
     } catch (err) { console.error("Failed to save clean record:", err); }
 
@@ -243,7 +251,7 @@ const Dashboard = ({
       execute: async () => {
         setCleanRecs(prevCleanRecs);
         setRotation(prevRotation);
-        if (realId) { try { await supabase.from("clean_records").delete().eq("id", realId); } catch (e) { console.error(e); } }
+        if (realId) { try { await remove(ref(db, `clean_records/${house.id}/${realId}`)); } catch (e) { console.error(e); } }
       },
     });
   }, [user, house, cleanRecs, rotation, members, cleaningRotationOrder, houseSettingsData, showToast]);
@@ -286,9 +294,17 @@ const Dashboard = ({
 
     let realId: string | null = null;
     try {
-      const { data, error } = await supabase.from("purchases").insert({ house_id: house.id, member_id: user.id, item_name: supply.label, date: today }).select().single();
-      if (error) throw error;
-      realId = data.id;
+      const purchasesRef = ref(db, `purchases/${house.id}`);
+      const newPurchaseRef = push(purchasesRef);
+      realId = newPurchaseRef.key;
+      await set(newPurchaseRef, {
+        id: realId,
+        house_id: house.id,
+        member_id: user.id,
+        item_name: supply.label,
+        date: today,
+        created_at: new Date().toISOString()
+      });
       setPurchases(prev => prev.map(p => p.id === tempId ? { ...p, id: realId! } : p));
       await houseService.updateNextBuyer(house.id, supply.label, nextMember.id);
     } catch (err) { console.error("Failed to save purchase:", err); }
@@ -300,7 +316,7 @@ const Dashboard = ({
         setSupplyResps(prevResps);
         if (realId) {
           try {
-            await supabase.from("purchases").delete().eq("id", realId);
+            await remove(ref(db, `purchases/${house.id}/${realId}`));
             if (currentResp) await houseService.updateNextBuyer(house.id, supply.label, currentBuyerId);
           } catch (e) { console.error(e); }
         }
@@ -318,52 +334,66 @@ const Dashboard = ({
 
     houseService.getHouseSettings(house.id).then(s => setHouseSettingsData(s));
 
+    // Firebase Clean Records Listener
+    const cleanRecsRef = ref(db, `clean_records/${house.id}`);
+    const unsubscribeClean = onValue(cleanRecsRef, async (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const recs = Object.values(data) as CleanRecord[];
+        const sortedRecs = recs.sort((a, b) => b.date.localeCompare(a.date));
+        setCleanRecs(sortedRecs);
 
-    const cleanSub = supabase.channel("clean_records_changes")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "clean_records", filter: `house_id=eq.${house.id}` }, async payload => {
-        const rec = payload.new as CleanRecord;
-        setCleanRecs(prev => prev.find(r => r.id === rec.id) ? prev : [rec, ...prev]);
-        
+        const latestRec = sortedRecs[0];
         // Check if current user is now next to clean
-        const updatedRotation = rotation; // rotation state at this point
-        const nextCleanerId = updatedRotation[0]?.memberId;
-        if (nextCleanerId === user.id && rec.member_id !== user.id) {
+        const nextCleanerId = rotation[0]?.memberId;
+        if (nextCleanerId === user.id && latestRec && latestRec.member_id !== user.id) {
           await notificationService.showLocal(
             "🧹 It's your turn to clean!",
             "Your housemate just cleaned — you're up next!"
           );
         }
-      }).subscribe();
+      }
+    });
 
-    const purchaseSub = supabase.channel("purchases_changes")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "purchases", filter: `house_id=eq.${house.id}` }, async payload => {
-        const p = payload.new as Purchase;
-        setPurchases(prev => prev.find(x => x.id === p.id) ? prev : [p, ...prev]);
+    // Firebase Purchases Listener
+    const purchasesRef = ref(db, `purchases/${house.id}`);
+    const unsubscribePurchases = onValue(purchasesRef, async (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const items = Object.values(data) as Purchase[];
+        const sortedPurchases = items.sort((a, b) => b.date.localeCompare(a.date));
+        setPurchases(sortedPurchases);
 
-        // Check if current user is now next for this item
-        const resp = supplyResps.find(r => r.item_name === p.item_name);
-        if (resp?.next_member_id === user.id && p.member_id !== user.id) {
-          const supply = SUPPLIES.find(s => s.label === p.item_name);
-          await notificationService.showLocal(
-            `${supply?.icon ?? '🛒'} Your turn to buy ${p.item_name}!`,
-            `Your housemate just bought it — you're next.`
-          );
+        const latestPurchase = sortedPurchases[0];
+        if (latestPurchase && latestPurchase.member_id !== user.id) {
+          const resp = supplyResps.find(r => r.item_name === latestPurchase.item_name);
+          if (resp?.next_member_id === user.id) {
+            const supply = activeSupplies.find(s => s.label === latestPurchase.item_name);
+            await notificationService.showLocal(
+              `${supply?.icon ?? '🛒'} Your turn to buy ${latestPurchase.item_name}!`,
+              `Your housemate just bought it — you're next.`
+            );
+          }
         }
-      }).subscribe();
+      }
+    });
 
-    const respSub = supabase.channel("supply_resps_changes")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "supply_responsibilities", filter: `house_id=eq.${house.id}` }, payload => {
-        const updated = payload.new as SupplyResponsibility;
-        setSupplyResps(prev => prev.map(r => r.id === updated.id ? updated : r));
-      }).subscribe();
+    // Firebase Supply Responsibilities Listener
+    const respsRef = ref(db, `supply_responsibilities/${house.id}`);
+    const unsubscribeResps = onValue(respsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        setSupplyResps(Object.values(data) as SupplyResponsibility[]);
+      }
+    });
 
     return () => {
       clearTimeout(permTimeout);
-      supabase.removeChannel(cleanSub);
-      supabase.removeChannel(purchaseSub);
-      supabase.removeChannel(respSub);
+      unsubscribeClean();
+      unsubscribePurchases();
+      unsubscribeResps();
     };
-  }, [house.id, rotation, user.id, supplyResps]);
+  }, [house.id, rotation, user.id, supplyResps, activeSupplies]);
 
   // ── Tabs — cleaning tab hidden when cleaningEnabled is false ──────────
   const tabs = [
@@ -382,12 +412,12 @@ const Dashboard = ({
     <div className="min-h-screen bg-background pb-28 text-foreground">
 
       {/* ── Header ── */}
-      <div className="px-5 pt-10 pb-6 bg-background sticky top-0 z-20 backdrop-blur-md bg-background/80 border-b border-border/40">
+      <div className="px-5 pt-10 pb-6 sticky top-0 z-20 backdrop-blur-md bg-background/80 border-b border-border/40">
         <div className="max-w-xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img 
-                src="/src/assets/nusa-putra-logo.png" 
+                src="/nusa-putra-logo.png" 
                 alt="Nusa Putra University" 
                 className="nusa-logo h-9 w-auto"
               />
@@ -619,7 +649,7 @@ const Dashboard = ({
             {/* Footer */}
             <div className="px-6 py-6 border-t border-border bg-background">
               <div className="flex flex-col items-center gap-3">
-                <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-8 w-auto grayscale opacity-40" />
+                <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-8 w-auto grayscale opacity-40" />
                 <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em] text-center">
                   NUSA NEST · {members.length} MEMBERS
                 </p>

@@ -4,7 +4,7 @@ const SplashScreen = () => (
   <div className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-background">
     <div className="mb-5 animate-float">
       <img 
-        src="/src/assets/nusa-putra-logo.png" 
+        src="/nusa-putra-logo.png" 
         alt="Nusa Putra University" 
         className="nusa-logo h-20 w-auto"
       />

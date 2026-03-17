@@ -1,8 +1,19 @@
 // ============================================================
-// houseService.ts — All Supabase DB operations for HouseHub
+// houseService.ts — All Firebase DB operations for HouseHub
 // ============================================================
 
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { 
+  ref, 
+  set, 
+  get, 
+  push, 
+  query, 
+  orderByChild, 
+  equalTo, 
+  update,
+  remove,
+} from "firebase/database";
 import { genCode, Member, CleanRecord, Purchase, SupplyResponsibility } from "@/lib/househub";
 
 export const houseService = {
@@ -19,14 +30,11 @@ export const houseService = {
 
     while (!isUnique && attempts < 10) {
       code = genCode();
-      const { data, error } = await supabase
-        .from("houses")
-        .select("house_code")
-        .eq("house_code", code)
-        .maybeSingle();
+      const housesRef = ref(db, "houses");
+      const codeQuery = query(housesRef, orderByChild("house_code"), equalTo(code));
+      const snapshot = await get(codeQuery);
 
-      if (error) throw new Error("Failed to verify house code uniqueness");
-      if (!data) isUnique = true;
+      if (!snapshot.exists()) isUnique = true;
       attempts++;
     }
 
@@ -36,26 +44,30 @@ export const houseService = {
 
   /** Creates a new house row. Returns the full inserted row. */
   async createHouse(name: string, code: string) {
-    const { data, error } = await supabase
-      .from("houses")
-      .insert({ name: name.trim(), house_code: code })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    const housesRef = ref(db, "houses");
+    const newHouseRef = push(housesRef);
+    const houseData = {
+      id: newHouseRef.key,
+      name: name.trim(),
+      house_code: code,
+      created_at: new Date().toISOString()
+    };
+    await set(newHouseRef, houseData);
+    return houseData;
   },
 
   /** Finds a house by its 6-digit code. Returns null if not found. */
   async getHouseByCode(code: string) {
-    const { data, error } = await supabase
-      .from("houses")
-      .select("*")
-      .eq("house_code", code)
-      .maybeSingle();
-
-    if (error) throw error;
-    return data;
+    const housesRef = ref(db, "houses");
+    const codeQuery = query(housesRef, orderByChild("house_code"), equalTo(code));
+    const snapshot = await get(codeQuery);
+    
+    if (!snapshot.exists()) return null;
+    
+    // Firebase query returns a Map; since house_code is unique, we take the first.
+    const data = snapshot.val();
+    const firstKey = Object.keys(data)[0];
+    return data[firstKey];
   },
 
   // ----------------------------------------------------------
@@ -67,30 +79,33 @@ export const houseService = {
     houseId: string,
     names: string[]
   ): Promise<Member[]> {
-    const rows = names.map((name) => ({
-      house_id: houseId,
-      name: name.trim(),
-    }));
+    const results: Member[] = [];
+    const membersRef = ref(db, `members/${houseId}`);
 
-    const { data, error } = await supabase
-      .from("members")
-      .insert(rows)
-      .select();
+    for (const name of names) {
+      const newMemberRef = push(membersRef);
+      const memberData = {
+        id: newMemberRef.key!,
+        house_id: houseId,
+        name: name.trim(),
+        created_at: new Date().toISOString()
+      };
+      await set(newMemberRef, memberData);
+      results.push(memberData as Member);
+    }
 
-    if (error) throw error;
-    return data as Member[];
+    return results;
   },
 
   /** Fetches all members for a house. */
   async getMembers(houseId: string): Promise<Member[]> {
-    const { data, error } = await supabase
-      .from("members")
-      .select("*")
-      .eq("house_id", houseId)
-      .order("created_at", { ascending: true });
-
-    if (error) throw error;
-    return data as Member[];
+    const membersRef = ref(db, `members/${houseId}`);
+    const snapshot = await get(membersRef);
+    
+    if (!snapshot.exists()) return [];
+    
+    const data = snapshot.val();
+    return Object.values(data) as Member[];
   },
 
   // ----------------------------------------------------------
@@ -103,23 +118,28 @@ export const houseService = {
     memberId: string,
     date: string
   ): Promise<void> {
-    const { error } = await supabase
-      .from("clean_records")
-      .insert({ house_id: houseId, member_id: memberId, date });
-
-    if (error) throw error;
+    const recsRef = ref(db, `clean_records/${houseId}`);
+    const newRecRef = push(recsRef);
+    await set(newRecRef, {
+      id: newRecRef.key,
+      house_id: houseId,
+      member_id: memberId,
+      date,
+      created_at: new Date().toISOString()
+    });
   },
 
   /** Fetches all cleaning records for a house, newest first. */
   async getCleanRecords(houseId: string): Promise<CleanRecord[]> {
-    const { data, error } = await supabase
-      .from("clean_records")
-      .select("*")
-      .eq("house_id", houseId)
-      .order("date", { ascending: false });
-
-    if (error) throw error;
-    return data as CleanRecord[];
+    const recsRef = ref(db, `clean_records/${houseId}`);
+    const snapshot = await get(recsRef);
+    
+    if (!snapshot.exists()) return [];
+    
+    const data = snapshot.val();
+    const recs = Object.values(data) as CleanRecord[];
+    // Sort descending by date
+    return recs.sort((a, b) => b.date.localeCompare(a.date));
   },
 
   // ----------------------------------------------------------
@@ -133,23 +153,29 @@ export const houseService = {
     itemName: string,
     date: string
   ): Promise<void> {
-    const { error } = await supabase
-      .from("purchases")
-      .insert({ house_id: houseId, member_id: memberId, item_name: itemName, date });
-
-    if (error) throw error;
+    const purchasesRef = ref(db, `purchases/${houseId}`);
+    const newPurchaseRef = push(purchasesRef);
+    await set(newPurchaseRef, {
+      id: newPurchaseRef.key,
+      house_id: houseId,
+      member_id: memberId,
+      item_name: itemName,
+      date,
+      created_at: new Date().toISOString()
+    });
   },
 
   /** Fetches all purchases for a house, newest first. */
   async getPurchases(houseId: string): Promise<Purchase[]> {
-    const { data, error } = await supabase
-      .from("purchases")
-      .select("*")
-      .eq("house_id", houseId)
-      .order("date", { ascending: false });
-
-    if (error) throw error;
-    return data as Purchase[];
+    const purchasesRef = ref(db, `purchases/${houseId}`);
+    const snapshot = await get(purchasesRef);
+    
+    if (!snapshot.exists()) return [];
+    
+    const data = snapshot.val();
+    const purchases = Object.values(data) as Purchase[];
+    // Sort descending by date
+    return purchases.sort((a, b) => b.date.localeCompare(a.date));
   },
 
   // ----------------------------------------------------------
@@ -164,30 +190,33 @@ export const houseService = {
     houseId: string,
     items: { item_name: string; next_member_id: string }[]
   ): Promise<void> {
-    const rows = items.map((i) => ({
-      house_id: houseId,
-      item_name: i.item_name,
-      next_member_id: i.next_member_id,
-    }));
+    const respsRef = ref(db, `supply_responsibilities/${houseId}`);
+    
+    const updates: Record<string, any> = {};
+    items.forEach(item => {
+      const newKey = push(respsRef).key;
+      updates[newKey!] = {
+        id: newKey,
+        house_id: houseId,
+        item_name: item.item_name,
+        next_member_id: item.next_member_id
+      };
+    });
 
-    const { error } = await supabase
-      .from("supply_responsibilities")
-      .insert(rows);
-
-    if (error) throw error;
+    await update(respsRef, updates);
   },
 
   /** Fetches all supply responsibilities for a house. */
   async getSupplyResponsibilities(
     houseId: string
   ): Promise<SupplyResponsibility[]> {
-    const { data, error } = await supabase
-      .from("supply_responsibilities")
-      .select("*")
-      .eq("house_id", houseId);
-
-    if (error) throw error;
-    return data as SupplyResponsibility[];
+    const respsRef = ref(db, `supply_responsibilities/${houseId}`);
+    const snapshot = await get(respsRef);
+    
+    if (!snapshot.exists()) return [];
+    
+    const data = snapshot.val();
+    return Object.values(data) as SupplyResponsibility[];
   },
 
   /**
@@ -199,13 +228,18 @@ export const houseService = {
     itemName: string,
     nextMemberId: string
   ): Promise<void> {
-    const { error } = await supabase
-      .from("supply_responsibilities")
-      .update({ next_member_id: nextMemberId })
-      .eq("house_id", houseId)
-      .eq("item_name", itemName);
+    const respsRef = ref(db, `supply_responsibilities/${houseId}`);
+    const snapshot = await get(respsRef);
+    
+    if (!snapshot.exists()) return;
 
-    if (error) throw error;
+    const data = snapshot.val();
+    const itemKey = Object.keys(data).find(key => data[key].item_name === itemName);
+    
+    if (itemKey) {
+      const itemRef = ref(db, `supply_responsibilities/${houseId}/${itemKey}`);
+      await update(itemRef, { next_member_id: nextMemberId });
+    }
   },
 
   // ----------------------------------------------------------
@@ -226,21 +260,18 @@ export const houseService = {
       excluded_members?:        Record<string, string[]>;
     }
   ): Promise<void> {
-    const { error } = await supabase
-      .from("house_settings")
-      .upsert({
-        house_id:                houseId,
-        supplies:                settings.supplies,
-        cleaning_enabled:        settings.cleaning_enabled,
-        cleaning_frequency:      settings.cleaning_frequency,
-        cleaning_day:            settings.cleaning_day,
-        rotation_type:           settings.rotation_type,
-        cleaning_rotation_order: settings.cleaning_rotation_order ?? [],
-        supplies_rotation_order: settings.supplies_rotation_order ?? [],
-        excluded_members:        settings.excluded_members ?? {},
-      }, { onConflict: "house_id" });
-
-    if (error) throw error;
+    const settingsRef = ref(db, `house_settings/${houseId}`);
+    await set(settingsRef, {
+      house_id:                houseId,
+      supplies:                settings.supplies,
+      cleaning_enabled:        settings.cleaning_enabled,
+      cleaning_frequency:      settings.cleaning_frequency,
+      cleaning_day:            settings.cleaning_day,
+      rotation_type:           settings.rotation_type,
+      cleaning_rotation_order: settings.cleaning_rotation_order ?? [],
+      supplies_rotation_order: settings.supplies_rotation_order ?? [],
+      excluded_members:        settings.excluded_members ?? {},
+    });
   },
 
   /** Updates excluded members for a specific key (cleaning or item name). */
@@ -263,14 +294,11 @@ export const houseService = {
 
   /** Fetches house settings. Returns null if not set up yet (legacy houses). */
   async getHouseSettings(houseId: string) {
-    const { data, error } = await supabase
-      .from("house_settings")
-      .select("*")
-      .eq("house_id", houseId)
-      .maybeSingle();
-
-    if (error) throw error;
-    return data;
+    const settingsRef = ref(db, `house_settings/${houseId}`);
+    const snapshot = await get(settingsRef);
+    
+    if (!snapshot.exists()) return null;
+    return snapshot.val();
   },
 
   /** Adds a new supply item to the house settings supplies array. */
@@ -280,12 +308,8 @@ export const houseService = {
     newItem:         { id: string; label: string; icon: string; col: string; bg: string }
   ): Promise<void> {
     const updated = [...currentSupplies, newItem];
-    const { error } = await supabase
-      .from("house_settings")
-      .update({ supplies: updated })
-      .eq("house_id", houseId);
-
-    if (error) throw error;
+    const settingsRef = ref(db, `house_settings/${houseId}`);
+    await update(settingsRef, { supplies: updated });
   },
 
   /** Removes a supply item from the house settings supplies array. */
@@ -295,11 +319,7 @@ export const houseService = {
     itemId: string
   ): Promise<void> {
     const updated = currentSupplies.filter(s => s.id !== itemId);
-    const { error } = await supabase
-      .from("house_settings")
-      .update({ supplies: updated })
-      .eq("house_id", houseId);
-
-    if (error) throw error;
+    const settingsRef = ref(db, `house_settings/${houseId}`);
+    await update(settingsRef, { supplies: updated });
   },
 };

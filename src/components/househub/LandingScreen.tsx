@@ -134,7 +134,7 @@ const LandingScreen = ({ onSetup, onJoin }: LandingScreenProps) => {
           <div className="mb-4 flex justify-center"
             style={{ animation: "float 4s ease-in-out infinite" }}>
             <img 
-              src="/src/assets/nusa-putra-logo.png" 
+              src="/nusa-putra-logo.png" 
               alt="Nusa Putra University" 
               className="nusa-logo h-28 w-auto"
             />
@@ -316,13 +316,7 @@ const LandingScreen = ({ onSetup, onJoin }: LandingScreenProps) => {
 
         {/* ── Footer ── */}
         <div className="mt-12 pt-8 border-t border-border/40 text-center reveal-card">
-          <div className="flex justify-center mb-4">
-             <img 
-               src="/src/assets/nusa-putra-logo.png" 
-               alt="Nusa Putra University" 
-               className="nusa-logo h-10 w-auto grayscale opacity-50"
-             />
-          </div>
+
           <p className="text-[15px] font-semibold text-primary leading-relaxed mb-1">
             NusaNest keeps shared homes organized and fair.
           </p>

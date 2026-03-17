@@ -3,7 +3,8 @@ import { House, Member, HouseSettings as HouseSettingsType } from "@/lib/househu
 import { Trash2, Plus } from "lucide-react";
 import Avatar from "./Avatar";
 import { houseService } from "@/services/houseService";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { ref, remove, get } from "firebase/database";
 
 
 interface HouseSettingsProps {
@@ -157,7 +158,7 @@ const MembersTab = ({
     if (loading) return;
     setLoading(true);
     try {
-      await supabase.from("members").delete().eq("id", memberId);
+      await remove(ref(db, `members/${house.id}/${memberId}`));
       onMembersChange(members.filter(m => m.id !== memberId));
       setRemoving(null);
     } catch (err) {
@@ -308,8 +309,14 @@ const SuppliesTab = ({
     try {
       const updatedSupplies = houseSettings.supplies.filter(s => s.id !== supplyId);
       await houseService.saveHouseSettings(house.id, { ...houseSettings, supplies: updatedSupplies });
-      await supabase.from("supply_responsibilities")
-        .delete().eq("house_id", house.id).eq("item_name", supplyId);
+      const respRef = ref(db, `supply_responsibilities/${house.id}`);
+      // In Firebase we need the key, so we fetch and filter
+      const snapshot = await get(respRef);
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const itemKey = Object.keys(data).find(key => data[key].item_name === supplyId);
+        if (itemKey) await remove(ref(db, `supply_responsibilities/${house.id}/${itemKey}`));
+      }
       onSettingsChange({ ...houseSettings, supplies: updatedSupplies });
       setRemoving(null);
     } catch (err) {
@@ -377,7 +384,7 @@ const SuppliesTab = ({
                     <button
                       onClick={() => toggleMemberFromSupply(s.label, m.id, excluded)}
                       disabled={loading}
-                      className={`relative w-11 h-6 rounded-full transition-all duration-300 ${!excluded ? "bg-primary" : "bg-muted border border-2 border-border"}`}
+                      className={`relative w-11 h-6 rounded-full transition-all duration-300 ${!excluded ? "bg-primary" : "bg-muted border-2 border-border"}`}
                     >
                       <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300 ${!excluded ? "left-5" : "left-0.5"}`} />
                     </button>

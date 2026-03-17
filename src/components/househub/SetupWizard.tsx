@@ -202,7 +202,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
     <div className="flex flex-col gap-4 animate-fade-up">
       <div className="flex justify-between items-start">
         <button className={btnOutline} onClick={goBack}>← Back</button>
-        <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+        <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
       </div>
       <div className="mb-1">
         <p className="text-4xl mb-3">🔄</p>
@@ -404,7 +404,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {step === 0 && (
           <div className="flex flex-col gap-4 animate-fade-up">
             <div className="flex justify-end">
-              <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+              <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
             </div>
             <div className="mb-2">
               <p className="text-4xl mb-3">🏠</p>
@@ -423,7 +423,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
           <div className="flex flex-col gap-4 animate-fade-up">
             <div className="flex justify-between items-start">
               <button className={btnOutline} onClick={goBack}>← Back</button>
-              <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+              <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
             </div>
             <div className="mb-2">
               <p className="text-4xl mb-3">👥</p>
@@ -449,7 +449,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
           <div className="flex flex-col gap-3 animate-fade-up">
             <div className="flex justify-between items-start mb-2">
               <button className={btnOutline} onClick={goBack}>← Back</button>
-              <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+              <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
             </div>
             <div className="mb-1">
               <p className="text-4xl mb-3">✍️</p>
@@ -492,7 +492,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
           <div className="flex flex-col gap-5 animate-fade-up">
             <div className="flex justify-between items-start">
               <button className={btnOutline} onClick={goBack}>← Back</button>
-              <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+              <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
             </div>
             <div>
               <p className="text-4xl mb-3">🛒</p>
@@ -579,7 +579,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
           <div className="flex flex-col gap-5 animate-fade-up">
             <div className="flex justify-between items-start">
               <button className={btnOutline} onClick={goBack}>← Back</button>
-              <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+              <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
             </div>
             <div>
               <p className="text-4xl mb-3">🧹</p>
@@ -633,7 +633,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
           <div className="flex flex-col gap-5 animate-fade-up">
             <div className="flex justify-between items-start">
               <button className={btnOutline} onClick={goBack}>← Back</button>
-              <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+              <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
             </div>
             <div>
               <p className="text-4xl mb-3">📋</p>

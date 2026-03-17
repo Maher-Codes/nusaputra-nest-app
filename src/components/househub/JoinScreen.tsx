@@ -55,6 +55,24 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const pasteData = e.clipboardData.getData("text");
+    const pasteDigits = pasteData.replace(/\D/g, "").slice(0, 6).split("");
+
+    if (pasteDigits.length > 0) {
+      const newDigits = [...digits];
+      pasteDigits.forEach((digit, i) => {
+        if (i < 6) newDigits[i] = digit;
+      });
+      setDig(newDigits);
+      setError("");
+
+      // Focus the last filled box or the next one
+      const lastIdx = Math.min(pasteDigits.length, 5);
+      setTimeout(() => refs.current[lastIdx]?.focus(), 10);
+    }
+  };
+
   // ── Verify the house code and load all data ────────────────────────
   const verify = async () => {
     const code = digits.join("");
@@ -155,7 +173,7 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between mb-4">
             <img 
-              src="/src/assets/nusa-putra-logo.png" 
+              src="/nusa-putra-logo.png" 
               alt="Nusa Putra University" 
               className="nusa-logo h-10 w-auto"
             />
@@ -197,6 +215,7 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
                   ref={el => { refs.current[i] = el; }}
                   onChange={e => handleDigit(i, e.target.value)}
                   onKeyDown={e => handleKey(i, e)}
+                  onPaste={handlePaste}
                   onFocus={e => e.target.select()}
                   autoFocus={i === 0}
                 />
