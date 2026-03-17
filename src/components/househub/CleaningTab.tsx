@@ -78,7 +78,7 @@ const CleaningTab = ({
               style={{
                 left:       `${10 + Math.random() * 80}%`,
                 top:        `-${10 + Math.random() * 10}%`,
-                background: ["#2A9D8F","#3A86FF","#F4A261","#E9C46A","#E76F51","#fff"][i % 6],
+                background: ["#770042","#D4A373","#550030","#FAF3E0","#33001C","#fff"][i % 6],
                 animation:  `confetti-fall ${1.2 + Math.random() * 1.4}s ease-in forwards`,
                 animationDelay: `${Math.random() * 0.5}s`,
                 transform:  `rotate(${Math.random() * 360}deg)`,
@@ -96,7 +96,7 @@ const CleaningTab = ({
         <div
           className={`rounded-2xl border p-5 transition-all duration-500 ${
             isMyTurnClean && !done
-              ? "bg-primary/5 border-primary/40 shadow-[0_0_0_4px_rgba(42,157,143,0.07)]"
+              ? "bg-primary/5 border-primary/40 shadow-[0_0_0_4px_rgba(119,0,66,0.07)]"
               : done
               ? "bg-emerald-50/50 border-emerald-200/60 dark:bg-emerald-950/20 dark:border-emerald-800/30"
               : "bg-card shadow-sm border-border"
@@ -133,14 +133,14 @@ const CleaningTab = ({
               style={{ animation: "slide-up 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}
             >
               <span className="text-2xl">{celebration.emoji}</span>
-              <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+              <p className="text-sm font-bold text-primary">
                 {celebration.msg}
               </p>
             </div>
           )}
 
           {done && !celebration && (
-            <p className="mt-3 text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+            <p className="mt-3 text-sm font-bold text-primary flex items-center gap-1.5">
               <CheckCircle2 size={14} />
               Cleaning marked as done!
             </p>

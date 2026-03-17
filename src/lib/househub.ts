@@ -89,16 +89,16 @@ export const DAY_SHORT  = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 // --- Constants ---
 
 export const AV_COLORS = [
-  "#2A9D8F", "#3A86FF", "#F4A261",
-  "#21867A", "#2563EB", "#D97706",
-  "#1F2937", "#4F46E5",
+  "#770042", "#D4A373", "#B76E79",
+  "#550030", "#A67C52", "#8C525A",
+  "#33001C", "#2D2A24",
 ];
 
 // Supplies list — item_name values must match what's stored in DB
 export const SUPPLIES: Supply[] = [
   { id: "Water",       label: "Water",       icon: "💧", bg: "rgba(58, 134, 255, 0.1)",  col: "#3A86FF" },
   { id: "Gas",         label: "Gas",         icon: "🔥", bg: "rgba(244, 162, 97, 0.1)",  col: "#F4A261" },
-  { id: "Soap & Sponge", label: "Soap & Sponge", icon: "🫧", bg: "rgba(42, 157, 143, 0.1)", col: "#2A9D8F" },
+  { id: "Soap & Sponge", label: "Soap & Sponge", icon: "🫧", bg: "rgba(212, 163, 115, 0.1)", col: "#D4A373" },
 ];
 
 // --- Utility Functions ---

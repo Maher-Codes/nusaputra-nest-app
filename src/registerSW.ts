@@ -4,9 +4,9 @@ export const registerServiceWorker = async () => {
       const registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/',
       });
-      console.log('HouseHub SW registered:', registration.scope);
-    } catch (err) {
-      console.error('HouseHub SW registration failed:', err);
+      console.log("NusaNest PWA: Service worker registered");
+    } catch (error) {
+      console.error("NusaNest PWA: Service worker registration error", error);
     }
   }
 };

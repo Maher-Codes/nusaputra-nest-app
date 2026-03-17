@@ -46,7 +46,7 @@ const HomeTab = ({
           className={`group rounded-2xl border p-6 transition-all duration-300 cursor-pointer
             hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99]
             ${isMyTurnClean
-              ? "bg-primary/5 border-primary/30 shadow-[0_0_0_3px_rgba(42,157,143,0.08)]"
+              ? "bg-primary/5 border-primary/30 shadow-[0_0_0_3px_rgba(119,0,66,0.08)]"
               : "bg-card border-border shadow-sm hover:border-primary/20"
             }
           `}
@@ -100,7 +100,7 @@ const HomeTab = ({
         className={`group rounded-2xl border p-6 transition-all duration-300 cursor-pointer
           hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99]
           ${isMyTurnBuy
-            ? "bg-accent/5 border-accent/30 shadow-[0_0_0_3px_rgba(42,157,143,0.06)]"
+            ? "bg-accent/5 border-accent/30 shadow-[0_0_0_3px_rgba(212,163,115,0.06)]"
             : "bg-card border-border shadow-sm hover:border-accent/20"
           }
         `}

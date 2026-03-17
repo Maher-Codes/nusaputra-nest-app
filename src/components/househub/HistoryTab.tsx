@@ -182,7 +182,7 @@ const HistoryTab = ({ user, members, cleanRecs, purchases, activeSupplies }: His
                       </div>
                     </div>
                     {isFirst && (
-                      <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20 shadow-sm">
                         Latest
                       </span>
                     )}
@@ -244,7 +244,7 @@ const HistoryTab = ({ user, members, cleanRecs, purchases, activeSupplies }: His
                       </div>
                     </div>
                     {isFirst && (
-                      <span className="text-xs font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-bold text-secondary bg-secondary/10 px-2.5 py-1 rounded-full border border-secondary/20 shadow-sm">
                         Latest
                       </span>
                     )}

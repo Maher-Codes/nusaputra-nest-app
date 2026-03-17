@@ -108,7 +108,7 @@ const SuppliesTab = ({
                 key={s.id}
                 className={`rounded-2xl border transition-all duration-400 ${
                   celebration
-                    ? "bg-emerald-50/60 border-emerald-200/70 shadow-md dark:bg-emerald-950/20 dark:border-emerald-800/30"
+                    ? "bg-primary/5 border-primary/20 shadow-md"
                     : isMyTurn
                     ? "bg-accent/10 border-accent/40 shadow-sm"
                     : "bg-card border-border shadow-sm hover:shadow-md hover:border-border/80"
@@ -155,7 +155,7 @@ const SuppliesTab = ({
                   {celebration && (
                     <CheckCircle2
                       size={22}
-                      className="text-emerald-500 shrink-0"
+                      className="text-primary shrink-0"
                       style={{ animation: "pop-in 0.35s cubic-bezier(0.34,1.56,0.64,1)" }}
                     />
                   )}
@@ -195,7 +195,7 @@ const SuppliesTab = ({
                     style={{ animation: "slide-up 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}
                   >
                     <span className="text-xl">{celebration.emoji}</span>
-                    <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                    <p className="text-sm font-bold text-primary">
                       {celebration.msg}
                     </p>
                   </div>

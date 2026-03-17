@@ -123,13 +123,13 @@ const Dashboard = ({
 
   // ── Share — native share sheet with pre-written message ──────────────
   const shareCode = async () => {
-    const url     = "https://gethousehub.vercel.app";
+    const url     = "https://nusanest.vercel.app";
     const message =
-      `Hey! 👋 It's ${user.name} — I've set up our house on HouseHub, an app that keeps track of who cleans and who buys shared supplies, so everything stays fair.\n\n` +
+      `Hey! 👋 It's ${user.name} — I've set up our house on NusaNest, the student living app for Universitas Nusa Putra.\n\n` +
       `Here's the link: ${url}\n` +
       `Our house code is: *${house.house_code}*\n\n` +
       `To join:\n1. Open the link above\n2. Tap "Join existing house"\n3. Enter the code: *${house.house_code}*\n4. Select your name\n\n` +
-      `That's it! Welcome to the HouseHub 🏠`;
+      `That's it! Welcome to the NusaNest 🏠`;
 
     if (navigator.share) {
       try {
@@ -149,17 +149,14 @@ const Dashboard = ({
   };
 
   // ── Cleaning derived state ────────────────────────────────────────────
-  const cleaningDay = houseSettingsData?.cleaning_day ?? 6;
-
-  const getNextCleaningDate = (fromDay: number): Date => {
+  const nextCleaningDate = useMemo(() => {
+    const day   = houseSettingsData?.cleaning_day ?? 6;
     const today = new Date();
-    const diff  = (fromDay - today.getDay() + 7) % 7 || 7;
+    const diff  = (day - today.getDay() + 7) % 7 || 7;
     const next  = new Date(today);
     next.setDate(today.getDate() + diff);
     return next;
-  };
-
-  const nextCleaningDate = getNextCleaningDate(cleaningDay);
+  }, [houseSettingsData?.cleaning_day]);
 
   const thisRotation  = rotation[0] ?? null;
   const thisCleanMbr  = getMember(thisRotation?.memberId ?? "");
@@ -385,22 +382,33 @@ const Dashboard = ({
     <div className="min-h-screen bg-background pb-28 text-foreground">
 
       {/* ── Header ── */}
-      <div className="px-5 pt-10 pb-6 bg-background">
+      <div className="px-5 pt-10 pb-6 bg-background sticky top-0 z-20 backdrop-blur-md bg-background/80 border-b border-border/40">
         <div className="max-w-xl mx-auto">
           <div className="flex items-center justify-between">
-            <h1 className="font-display font-black text-2xl text-foreground tracking-tight">HouseHub</h1>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/src/assets/nusa-putra-logo.png" 
+                alt="Nusa Putra University" 
+                className="nusa-logo h-9 w-auto"
+              />
+              <h1 className="font-display font-black text-2xl text-primary tracking-tight">NusaNest</h1>
+            </div>
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-2.5 rounded-xl bg-muted/60 border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all active:scale-90"
+              className="p-2.5 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary hover:border-primary/30 transition-all active:scale-90"
             >
-              <Menu size={18} />
+              <Menu size={20} />
             </button>
           </div>
+        </div>
+      </div>
 
-          <div className="mt-7">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">{todayFull()}</p>
-            <h2 className="font-display font-black text-4xl text-primary leading-tight">
-              Hello, {user?.name.split(" ")[0]} 👋
+      <div className="px-5 pt-6 pb-2">
+        <div className="max-w-xl mx-auto">
+          <div className="mt-2">
+            <p className="text-[11px] font-bold text-secondary uppercase tracking-[0.2em] mb-1">{todayFull()}</p>
+            <h2 className="font-display font-black text-4xl text-foreground leading-tight">
+              Hello, <span className="text-primary">{user?.name.split(" ")[0]}</span> 👋
             </h2>
             <p className="text-muted-foreground text-base mt-2 animate-fade-up font-medium leading-relaxed" 
                style={{ animationDelay: "0.15s" }}>
@@ -411,20 +419,20 @@ const Dashboard = ({
       </div>
 
       {/* ── Tab bar ── */}
-      <div className="max-w-xl mx-auto px-4 mt-1">
-        <div className="flex gap-2 p-1 bg-muted/60 rounded-2xl border border-border/50 overflow-x-auto scrollbar-hide">
+      <div className="max-w-xl mx-auto px-4 mt-6">
+        <div className="flex gap-2 p-1.5 bg-card rounded-2xl border-2 border-border overflow-x-auto scrollbar-hide shadow-sm">
           {tabs.map(t => (
             <button
               key={t.id}
-              className={`flex-1 min-w-[72px] py-2.5 px-2 rounded-xl font-bold text-sm transition-all duration-250 flex items-center justify-center gap-1.5
+              className={`flex-1 min-w-[80px] py-3 px-2 rounded-xl font-bold text-sm transition-all duration-300 flex flex-col items-center justify-center gap-1
                 ${tab === t.id
-                  ? "bg-background text-foreground shadow-md scale-[1.02]"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50 active:scale-95"
+                  ? "bg-primary text-primary-foreground shadow-lg scale-[1.02]"
+                  : "text-muted-foreground hover:text-primary hover:bg-primary/5 active:scale-95"
                 }`}
               onClick={() => switchTab(t.id)}
             >
-              <span className="text-base leading-none">{t.emoji}</span>
-              <span className="text-xs">{t.label}</span>
+              <span className={`text-lg leading-none transition-transform duration-300 ${tab === t.id ? "scale-110" : ""}`}>{t.emoji}</span>
+              <span className="text-[10px] uppercase tracking-wider">{t.label}</span>
             </button>
           ))}
         </div>
@@ -553,65 +561,69 @@ const Dashboard = ({
             style={{ animation: "slide-in-sidebar 0.3s cubic-bezier(0.34,1.2,0.64,1) both" }}
           >
             {/* Header */}
-            <div className="px-6 pt-10 pb-6 border-b border-border">
-              <div className="flex items-center justify-between">
+            <div className="px-6 pt-10 pb-6 border-b-2 border-border bg-primary/5 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
+              <div className="flex items-center justify-between relative z-10">
                 <div>
-                  <p className="font-display font-black text-lg text-foreground">{house.name}</p>
-                  <p className="text-xs text-muted-foreground font-mono mt-0.5">Code: {house.house_code}</p>
+                  <p className="font-display font-black text-xl text-primary">{house.name}</p>
+                  <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">Code: {house.house_code}</p>
                 </div>
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="p-2 rounded-xl hover:bg-muted transition-all text-muted-foreground hover:text-foreground"
+                  className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center hover:text-primary transition-all active:scale-90 shadow-sm"
                 >✕</button>
               </div>
             </div>
 
             {/* Menu Items */}
-            <div className="flex-1 px-4 py-6 flex flex-col gap-2">
+            <div className="flex-1 px-4 py-8 flex flex-col gap-3">
 
               {/* House Settings */}
               <button
                 onClick={() => { setSidebarOpen(false); setShowSettings(true); }}
-                className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl hover:bg-muted/60 transition-all text-left group"
+                className="w-full flex items-center gap-4 px-4 py-4 rounded-3xl border-2 border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all text-left group"
               >
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-xl group-hover:bg-primary/20 transition-all">⚙️</div>
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-all shadow-sm">⚙️</div>
                 <div>
-                  <p className="font-bold text-sm text-foreground">House Settings</p>
-                  <p className="text-xs text-muted-foreground">Edit members, supplies & schedule</p>
+                  <p className="font-bold text-[15px] text-foreground">House Settings</p>
+                  <p className="text-xs text-muted-foreground font-medium">Edit members, supplies & schedule</p>
                 </div>
               </button>
 
               {/* Share House */}
               <button
                 onClick={() => { setSidebarOpen(false); shareCode(); }}
-                className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl hover:bg-muted/60 transition-all text-left group"
+                className="w-full flex items-center gap-4 px-4 py-4 rounded-3xl border-2 border-transparent hover:border-secondary/20 hover:bg-secondary/5 transition-all text-left group"
               >
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-xl group-hover:bg-blue-500/20 transition-all">📤</div>
+                <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-all shadow-sm">📤</div>
                 <div>
-                  <p className="font-bold text-sm text-foreground">Share House</p>
-                  <p className="text-xs text-muted-foreground">Invite housemates via WhatsApp</p>
+                  <p className="font-bold text-[15px] text-foreground">Share NusaNest</p>
+                  <p className="text-xs text-muted-foreground font-medium">Invite housemates via WhatsApp</p>
                 </div>
               </button>
 
               {/* Leave House */}
               <button
                 onClick={() => { setSidebarOpen(false); setShowLeave(true); }}
-                className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl hover:bg-destructive/8 transition-all text-left group"
+                className="w-full flex items-center gap-4 px-4 py-4 rounded-3xl border-2 border-transparent hover:border-destructive/20 hover:bg-destructive/5 transition-all text-left group"
               >
-                <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center text-xl group-hover:bg-destructive/20 transition-all">🚪</div>
+                <div className="w-12 h-12 rounded-2xl bg-destructive/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-all shadow-sm">🚪</div>
                 <div>
-                  <p className="font-bold text-sm text-destructive">Leave House</p>
-                  <p className="text-xs text-muted-foreground">Return to the home screen</p>
+                  <p className="font-bold text-[15px] text-destructive">Leave House</p>
+                  <p className="text-xs text-muted-foreground font-medium">Return to the entry screen</p>
                 </div>
               </button>
 
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-5 border-t border-border">
-              <p className="text-xs text-muted-foreground text-center">
-                HouseHub · {members.length} members
-              </p>
+            <div className="px-6 py-6 border-t border-border bg-background">
+              <div className="flex flex-col items-center gap-3">
+                <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-8 w-auto grayscale opacity-40" />
+                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em] text-center">
+                  NUSA NEST · {members.length} MEMBERS
+                </p>
+              </div>
             </div>
 
           </div>

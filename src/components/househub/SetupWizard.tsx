@@ -26,7 +26,7 @@ interface SetupWizardProps {
 const SUGGESTED_SUPPLIES: Supply[] = [
   { id: "Water",         label: "Water",         icon: "💧", bg: "rgba(58,134,255,0.1)",  col: "#3A86FF" },
   { id: "Gas",           label: "Gas",           icon: "🔥", bg: "rgba(244,162,97,0.1)",  col: "#F4A261" },
-  { id: "Soap & Sponge", label: "Soap & Sponge", icon: "🫧", bg: "rgba(42,157,143,0.1)",  col: "#2A9D8F" },
+  { id: "Soap & Sponge", label: "Soap & Sponge", icon: "🫧", bg: "rgba(212, 163, 115, 0.1)",  col: "#D4A373" },
   { id: "Electricity",   label: "Electricity",   icon: "⚡", bg: "rgba(234,179,8,0.1)",   col: "#CA8A04" },
   { id: "Internet",      label: "Internet",      icon: "🌐", bg: "rgba(99,102,241,0.1)",  col: "#6366F1" },
   { id: "Groceries",     label: "Groceries",     icon: "🛍️", bg: "rgba(34,197,94,0.1)",   col: "#16A34A" },
@@ -66,7 +66,8 @@ const EMOJI_PICKER = [
 const TOTAL_STEPS = 10;
 
 const inputClass  = "w-full px-4 py-3.5 rounded-xl border border-border bg-card text-foreground text-base font-medium focus:outline-none focus:border-primary transition-colors";
-const btnPrimary  = "w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-base shadow-sm hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none";
+const btnPrimary  = "w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-base shadow-md hover:bg-primary/95 hover:translate-y-[-1px] active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none";
+const btnOutline  = "w-fit px-4 py-2 rounded-xl border-2 border-secondary/40 text-secondary text-xs font-bold cursor-pointer hover:bg-secondary/5 transition-all active:scale-95";
 
 const ordinal = (n: number) => {
   const s = ["th","st","nd","rd"];
@@ -199,7 +200,10 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
     onContinue: () => void,
   ) => (
     <div className="flex flex-col gap-4 animate-fade-up">
-      <button className="w-fit text-sm font-bold text-muted-foreground hover:text-foreground" onClick={goBack}>← Back</button>
+      <div className="flex justify-between items-start">
+        <button className={btnOutline} onClick={goBack}>← Back</button>
+        <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+      </div>
       <div className="mb-1">
         <p className="text-4xl mb-3">🔄</p>
         <h2 className="font-display font-black text-2xl text-foreground mb-1">{title}</h2>
@@ -215,7 +219,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
             {/* Position number */}
             <span
               className="text-sm font-black w-8 shrink-0 text-center"
-              style={{ color: "#2a9d8f" }}
+              style={{ color: "hsl(var(--primary))" }}
             >
               {ordinal(i + 1)}
             </span>
@@ -378,13 +382,16 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/50 px-6 py-4">
         <div className="max-w-lg mx-auto">
           <div className="flex items-center justify-between mb-3">
-            <h1 className="font-display font-black text-xl text-foreground">HouseHub</h1>
+            <h1 className="font-display font-black text-xl text-primary">NusaNest</h1>
             <span className="text-xs font-bold text-muted-foreground">Step {step + 1} of {TOTAL_STEPS}</span>
           </div>
           <div className="flex gap-1">
             {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-              <div key={i} className="flex-1 h-1 rounded-full transition-all duration-400"
-                style={{ background: i < step ? "hsl(var(--primary)/0.4)" : i === step ? "hsl(var(--primary))" : "hsl(var(--muted))" }}
+              <div key={i} className="flex-1 h-1.5 rounded-full transition-all duration-400"
+                style={{ 
+                  background: i < step ? "hsl(var(--primary))" : i === step ? "hsl(var(--primary))" : "hsl(var(--muted))",
+                  opacity: i <= step ? 1 : 0.3
+                }}
               />
             ))}
           </div>
@@ -396,10 +403,13 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {/* ── STEP 0 — House name ── */}
         {step === 0 && (
           <div className="flex flex-col gap-4 animate-fade-up">
+            <div className="flex justify-end">
+              <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+            </div>
             <div className="mb-2">
               <p className="text-4xl mb-3">🏠</p>
-              <h2 className="font-display font-black text-2xl text-foreground mb-1">Name your house</h2>
-              <p className="text-muted-foreground text-sm">Give your house a memorable name that your housemates will recognise.</p>
+              <h2 className="font-display font-black text-2xl text-foreground mb-1">Name your NusaNest</h2>
+              <p className="text-muted-foreground text-sm font-medium">Give your house a memorable name that your housemates will recognise.</p>
             </div>
             <input type="text" className={inputClass} placeholder='"The Green House", "Apartment 4B"…'
               value={houseName} onChange={e => setHN(e.target.value)}
@@ -411,7 +421,10 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {/* ── STEP 1 — Number of people ── */}
         {step === 1 && (
           <div className="flex flex-col gap-4 animate-fade-up">
-            <button className="w-fit text-sm font-bold text-muted-foreground hover:text-foreground" onClick={goBack}>← Back</button>
+            <div className="flex justify-between items-start">
+              <button className={btnOutline} onClick={goBack}>← Back</button>
+              <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+            </div>
             <div className="mb-2">
               <p className="text-4xl mb-3">👥</p>
               <h2 className="font-display font-black text-2xl text-foreground mb-1">How many housemates?</h2>
@@ -434,7 +447,10 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {/* ── STEP 2 — Member names ── */}
         {step === 2 && (
           <div className="flex flex-col gap-3 animate-fade-up">
-            <button className="w-fit text-sm font-bold text-muted-foreground hover:text-foreground" onClick={goBack}>← Back</button>
+            <div className="flex justify-between items-start mb-2">
+              <button className={btnOutline} onClick={goBack}>← Back</button>
+              <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+            </div>
             <div className="mb-1">
               <p className="text-4xl mb-3">✍️</p>
               <h2 className="font-display font-black text-2xl text-foreground mb-1">Who lives there?</h2>
@@ -474,11 +490,14 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {/* ── STEP 5 — What do you share? ── */}
         {step === 5 && (
           <div className="flex flex-col gap-5 animate-fade-up">
-            <button className="w-fit text-sm font-bold text-muted-foreground hover:text-foreground" onClick={goBack}>← Back</button>
+            <div className="flex justify-between items-start">
+              <button className={btnOutline} onClick={goBack}>← Back</button>
+              <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+            </div>
             <div>
               <p className="text-4xl mb-3">🛒</p>
               <h2 className="font-display font-black text-2xl text-foreground mb-1">What do you share?</h2>
-              <p className="text-muted-foreground text-sm">Select everything your house buys together. Add your own items too — every house is different.</p>
+              <p className="text-muted-foreground text-sm font-medium">Select everything your house buys together. Add your own items too — every house is different.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5">
@@ -519,8 +538,8 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
                           onClick={() => setCustomEmoji(em)}
                           className="w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-all duration-150 active:scale-90 shrink-0"
                           style={{
-                            background: customEmoji === em ? "rgba(42,157,143,0.15)" : "transparent",
-                            border: customEmoji === em ? "2px solid #2a9d8f" : "2px solid transparent",
+                            background: customEmoji === em ? "hsla(var(--primary) / 0.15)" : "transparent",
+                            border: customEmoji === em ? "2px solid hsl(var(--primary))" : "2px solid transparent",
                           }}
                           aria-label={em}
                         >
@@ -558,11 +577,14 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {/* ── STEP 6 — Cleaning schedule ── */}
         {step === 6 && (
           <div className="flex flex-col gap-5 animate-fade-up">
-            <button className="w-fit text-sm font-bold text-muted-foreground hover:text-foreground" onClick={goBack}>← Back</button>
+            <div className="flex justify-between items-start">
+              <button className={btnOutline} onClick={goBack}>← Back</button>
+              <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+            </div>
             <div>
               <p className="text-4xl mb-3">🧹</p>
               <h2 className="font-display font-black text-2xl text-foreground mb-1">Cleaning schedule?</h2>
-              <p className="text-muted-foreground text-sm">Does your house rotate cleaning duties?</p>
+              <p className="text-muted-foreground text-sm font-medium">Does your house rotate cleaning duties?</p>
             </div>
 
             <div className="flex gap-3">
@@ -609,11 +631,14 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {/* ── STEP 7 — Who bought what last? ── */}
         {step === 7 && (
           <div className="flex flex-col gap-5 animate-fade-up">
-            <button className="w-fit text-sm font-bold text-muted-foreground hover:text-foreground" onClick={goBack}>← Back</button>
+            <div className="flex justify-between items-start">
+              <button className={btnOutline} onClick={goBack}>← Back</button>
+              <img src="/src/assets/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+            </div>
             <div>
               <p className="text-4xl mb-3">📋</p>
               <h2 className="font-display font-black text-2xl text-foreground mb-1">Starting point</h2>
-              <p className="text-muted-foreground text-sm">Tell us who last bought each item and who's next. This is how we start the rotation.</p>
+              <p className="text-muted-foreground text-sm font-medium">Tell us who last bought each item and who's next. This is how we start the rotation.</p>
             </div>
 
             {cleaningEnabled && (
@@ -637,7 +662,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
             )}
 
             <button className={btnPrimary} onClick={handleFinish} disabled={!v6 || isGenerating}>
-              {isGenerating ? "Setting up your house…" : "🎉 Generate House Code"}
+              {isGenerating ? "Setting up your NusaNest…" : "🎉 Generate House Code"}
             </button>
           </div>
         )}
@@ -646,8 +671,8 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {step === 8 && (
           <div className="flex flex-col gap-4 text-center animate-fade-up">
             <div className="text-6xl" style={{ animation: "float 3s ease-in-out infinite" }}>🎉</div>
-            <h2 className="font-display font-black text-2xl">Your house is ready!</h2>
-            <p className="text-muted-foreground text-sm leading-relaxed">Share this code with your housemates:</p>
+            <h2 className="font-display font-black text-2xl text-primary">Your NusaNest is Ready!</h2>
+            <p className="text-muted-foreground text-sm font-medium leading-relaxed">Share this code with your housemates:</p>
             <div className="rounded-3xl p-7 bg-primary shadow-lg">
               <p className="text-primary-foreground/60 text-xs font-bold tracking-widest uppercase mb-3">House Code</p>
               <p className="font-display font-black text-5xl text-primary-foreground tracking-[0.22em] mb-2">{code}</p>
@@ -657,8 +682,8 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
               {copied ? "✅ Copied!" : "📋 Copy code"}
             </button>
             <div className="rounded-2xl bg-muted/40 border border-border p-4 text-left">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Your setup summary</p>
-              <div className="flex flex-col gap-1.5 text-sm">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Your NusaNest summary</p>
+              <div className="flex flex-col gap-1.5 text-sm font-medium">
                 <p>🛒 <b>{selectedSupplies.length} shared items:</b> {selectedSupplies.map(s => `${s.icon} ${s.label}`).join(", ")}</p>
                 <p>🧹 <b>Cleaning:</b> {cleaningEnabled ? `${cleaningFrequency === "weekly" ? "Every week" : cleaningFrequency === "biweekly" ? "Every 2 weeks" : "Monthly"} on ${DAY_LABELS[cleaningDay]}s` : "Not scheduled"}</p>
                 {cleaningEnabled && <p>🔄 <b>Cleaning order:</b> {cleaningRotationOrder.join(" → ")}</p>}
@@ -674,8 +699,8 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
           <div className="flex flex-col gap-3 animate-fade-up">
             <div className="mb-1">
               <p className="text-4xl mb-3">👋</p>
-              <h2 className="font-display font-black text-2xl text-foreground mb-1">Who are you?</h2>
-              <p className="text-muted-foreground text-sm">Select your name to enter the dashboard:</p>
+              <h2 className="font-display font-black text-2xl text-primary mb-1">Who are you?</h2>
+              <p className="text-muted-foreground text-sm font-medium">Select your name to enter your NusaNest:</p>
             </div>
             {realMembersRef.current.map((m, i) => (
               <button key={m.id}

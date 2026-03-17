@@ -87,7 +87,7 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
           supplies: [
             { id: "Water", label: "Water", icon: "💧", bg: "rgba(58,134,255,0.1)", col: "#3A86FF" },
             { id: "Gas", label: "Gas", icon: "🔥", bg: "rgba(244,162,97,0.1)", col: "#F4A261" },
-            { id: "Soap & Sponge", label: "Soap & Sponge", icon: "🫧", bg: "rgba(42,157,143,0.1)", col: "#2A9D8F" }
+            { id: "Soap & Sponge", label: "Soap & Sponge", icon: "🫧", bg: "rgba(212, 163, 115, 0.1)", col: "#D4A373" }
           ],
           cleaning_enabled: true,
           cleaning_frequency: "weekly",
@@ -151,20 +151,27 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
     <div className="min-h-screen bg-background flex flex-col">
 
       {/* Header */}
-      <div className="bg-primary/5 border-b border-border/40 px-6 pt-12 pb-8">
+      <div className="bg-background border-b border-border/40 px-6 pt-12 pb-8">
         <div className="max-w-md mx-auto">
-          <button
-            className="bg-transparent border-none text-muted-foreground text-sm font-bold cursor-pointer pb-4 block hover:text-foreground transition-colors"
-            onClick={onBack}
-          >
-            ← Back
-          </button>
-          <h2 className="font-display font-extrabold text-3xl text-foreground mb-1.5">
-            {step === "code" ? "Enter house code" : "✅ Code verified!"}
+          <div className="flex items-center justify-between mb-4">
+            <img 
+              src="/src/assets/nusa-putra-logo.png" 
+              alt="Nusa Putra University" 
+              className="nusa-logo h-10 w-auto"
+            />
+            <button
+              className="px-4 py-2 rounded-xl border-2 border-secondary/40 text-secondary text-xs font-bold cursor-pointer hover:bg-secondary/5 transition-all active:scale-95"
+              onClick={onBack}
+            >
+              ← Back
+            </button>
+          </div>
+          <h2 className="font-display font-extrabold text-3xl text-primary mb-1.5">
+            {step === "code" ? "Join Your NusaNest" : "✅ Code verified!"}
           </h2>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-sm font-medium">
             {step === "code"
-              ? "Your housemate shared a 6-digit code with you."
+              ? "Enter the 6-digit code shared by your housemate."
               : "Select your name to load your dashboard."}
           </p>
         </div>
@@ -184,7 +191,7 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
                   inputMode="numeric"
                   maxLength={1}
                   value={d}
-                  className={`w-12 h-16 rounded-xl border-2 bg-background font-display text-2xl font-bold text-primary text-center outline-none transition-all focus:border-primary focus:shadow-[0_0_0_4px_rgba(42,157,143,0.1)] focus:scale-105 ${
+                  className={`w-12 h-16 rounded-xl border-2 bg-background font-display text-2xl font-bold text-primary text-center outline-none transition-all focus:border-primary focus:shadow-[0_0_0_4px_hsla(330,100%,23%,0.1)] focus:scale-105 ${
                     d ? "border-primary/35 bg-card" : "border-border"
                   }`}
                   ref={el => { refs.current[i] = el; }}
@@ -207,11 +214,11 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
               onClick={verify}
               disabled={!digits.every(d => d) || loading}
             >
-              {loading ? "Verifying..." : "Verify Code →"}
+              {loading ? "Verifying..." : "Join House →"}
             </button>
 
-            <p className="text-muted-foreground/60 text-xs text-center">
-              Ask your housemate for the 6-digit code 😊
+            <p className="text-muted-foreground/60 text-[11px] text-center font-bold uppercase tracking-widest">
+              NusaNest for Universitas Nusa Putra
             </p>
           </div>
         )}

@@ -66,8 +66,8 @@ const HouseSettingsScreen = ({
             onClick={() => setSettingsTab(t.id)}
             className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200
               ${settingsTab === t.id
-                ? "bg-primary text-primary-foreground shadow-sm scale-[1.02]"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                ? "bg-primary text-primary-foreground shadow-lg scale-[1.04]"
+                : "text-muted-foreground hover:text-primary hover:bg-primary/5"
               }`}
           >
             <span>{t.emoji}</span>
@@ -377,9 +377,9 @@ const SuppliesTab = ({
                     <button
                       onClick={() => toggleMemberFromSupply(s.label, m.id, excluded)}
                       disabled={loading}
-                      className={`relative w-11 h-6 rounded-full transition-all duration-300 ${!excluded ? "bg-primary" : "bg-muted border border-border"}`}
+                      className={`relative w-11 h-6 rounded-full transition-all duration-300 ${!excluded ? "bg-primary" : "bg-muted border border-2 border-border"}`}
                     >
-                      <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-300 ${!excluded ? "left-5" : "left-0.5"}`} />
+                      <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300 ${!excluded ? "left-5" : "left-0.5"}`} />
                     </button>
                   </div>
                 );
@@ -657,7 +657,7 @@ const RotationTab = ({
         const member = members.find(m => m.id === id);
         if (!member) return null;
         return (
-          <div key={id} className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border">
+          <div key={id} className="flex items-center gap-3 p-4 rounded-2xl bg-card border-2 border-border hover:border-primary/20 transition-all">
             <span className="w-6 text-center font-black text-primary text-sm shrink-0">{idx + 1}</span>
             <Avatar name={member.name} size={36} radius={10} fontSize={14} />
             <span className="flex-1 font-semibold text-sm text-foreground">{member.name}</span>
