@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { Member, CleanRecord, RotationEntry, fmtDate } from "@/lib/househub";
+import { Member, CleanRecord, RotationEntry, fmtDate, TravelMode, TopContributor, MemberProfile, getDisplayName } from "@/lib/househub";
 import { CheckCircle2, Clock } from "lucide-react";
+import Avatar from "./Avatar";
+import { useTranslation } from "react-i18next";
 
 interface CleaningTabProps {
   rotation:      RotationEntry[];
@@ -11,16 +13,13 @@ interface CleaningTabProps {
   doClean:       () => void;
   cleanRecs:     CleanRecord[];
   nextCleaningDate: Date;
+  activeTravelModes: TravelMode[];
+  topContributor:    TopContributor | null;
+  memberProfiles:    Record<string, MemberProfile>;
+  members:           Member[];
 }
 
-// Celebration messages shown after logging a clean
-const CLEAN_MESSAGES = [
-  { emoji: "🧹", msg: "Amazing work! The house thanks you!" },
-  { emoji: "✨", msg: "Sparkling clean! You're a legend!" },
-  { emoji: "🌟", msg: "Look at you go! Absolute hero!" },
-  { emoji: "🏆", msg: "Champion cleaner right here!" },
-  { emoji: "💪", msg: "That's what we're talking about!" },
-];
+// Celebration messages moved to locale
 
 const CleaningTab = ({
   rotation,
@@ -31,7 +30,12 @@ const CleaningTab = ({
   doClean,
   cleanRecs,
   nextCleaningDate,
+  activeTravelModes,
+  topContributor,
+  memberProfiles,
+  members,
 }: CleaningTabProps) => {
+  const { t } = useTranslation();
   const [justDone,    setJustDone]   = useState(false);
   const [pressing,    setPressing]   = useState(false);
   const [celebration, setCelebration]= useState<{ emoji: string; msg: string } | null>(null);
@@ -51,8 +55,16 @@ const CleaningTab = ({
     setTimeout(() => {
       setJustDone(true);
       doClean();
-      const msg = CLEAN_MESSAGES[Math.floor(Math.random() * CLEAN_MESSAGES.length)];
-      setCelebration(msg);
+      
+      const messages = t('cleaning.messages', { returnObjects: true }) as string[];
+      const emojis = ["🧹", "✨", "🌟", "🏆", "💪"];
+      const randomIndex = Math.floor(Math.random() * messages.length);
+      
+      setCelebration({ 
+        emoji: emojis[randomIndex % emojis.length], 
+        msg: messages[randomIndex] 
+      });
+      
       setConfetti(true);
       setPressing(false);
       setTimeout(() => setConfetti(false), 2800);
@@ -91,7 +103,7 @@ const CleaningTab = ({
       {/* SECTION 1 — Next Cleaning */}
       <section>
         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
-          Next Cleaning
+          {t('cleaning.next_cleaning', "Next Cleaning")}
         </h3>
         <div
           className={`rounded-2xl border p-5 transition-all duration-500 ${
@@ -115,14 +127,14 @@ const CleaningTab = ({
             )}
           </div>
           <p className="text-sm text-foreground font-medium mb-1">
-            Responsible:{" "}
-            <span className="font-bold">{nextMbr?.name ?? "—"}</span>
+            {t('common.responsible', "Responsible")}:{" "}
+            <span className="font-bold">{getDisplayName(nextClean?.memberId ?? "", members, memberProfiles)}</span>
           </p>
 
           {!isMyTurnClean && nextMbr && !done && (
             <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
               <Clock size={13} className="shrink-0" />
-              Waiting for <span className="font-semibold text-foreground ml-1">{nextMbr.name}</span>
+              {t('cleaning.waiting_for', { name: getDisplayName(nextClean?.memberId ?? "", members, memberProfiles), defaultValue: `Waiting for ${getDisplayName(nextClean?.memberId ?? "", members, memberProfiles)}` })}
             </p>
           )}
 
@@ -142,7 +154,7 @@ const CleaningTab = ({
           {done && !celebration && (
             <p className="mt-3 text-sm font-bold text-primary flex items-center gap-1.5">
               <CheckCircle2 size={14} />
-              Cleaning marked as done!
+              {t('cleaning.marked_done', "Cleaning marked as done!")}
             </p>
           )}
 
@@ -157,7 +169,7 @@ const CleaningTab = ({
               onClick={handle}
               disabled={pressing}
             >
-              {pressing ? "Saving…" : "🧹 I cleaned the house"}
+              {pressing ? t('common.saving', "Saving…") : `🧹 ${t('cleaning.i_cleaned', "I cleaned the house")}`}
             </button>
           )}
         </div>
@@ -166,13 +178,13 @@ const CleaningTab = ({
       {/* SECTION 2 — Last Cleaning */}
       <section>
         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
-          Last Cleaning
+          {t('cleaning.last_cleaning', "Last Cleaning")}
         </h3>
         {lastClean ? (
           <div className="rounded-2xl border border-border bg-card p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
             <p className="text-base font-bold text-foreground flex items-center gap-2">
               <span className="text-lg">🧹</span>
-              {lastMbr?.name ?? "—"}
+              {getDisplayName(lastClean?.member_id ?? "", members, memberProfiles)}
               <span className="text-muted-foreground font-normal mx-0.5">—</span>
               <span className="font-normal text-muted-foreground text-sm">
                 {fmtDate(lastClean.date, { month: "long", day: "numeric" })}
@@ -180,14 +192,14 @@ const CleaningTab = ({
             </p>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">No cleaning recorded yet.</p>
+          <p className="text-sm text-muted-foreground">{t('cleaning.no_records', "No cleaning recorded yet.")}</p>
         )}
       </section>
 
       {/* SECTION 3 — Upcoming rotation */}
       <section>
         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
-          Upcoming Turns
+          {t('cleaning.upcoming_turns', "Upcoming Turns")}
         </h3>
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
           {rotation.length > 0 ? (
@@ -205,15 +217,24 @@ const CleaningTab = ({
                   <span className={`font-display font-bold w-5 shrink-0 text-sm ${isNext ? "text-primary" : "text-muted-foreground"}`}>
                     {i + 1}.
                   </span>
+                  <Avatar 
+                    name={getDisplayName(r.memberId, members, memberProfiles)} 
+                    size={28} 
+                    fontSize={12} 
+                    radius={8} 
+                    isTravelling={activeTravelModes.some(t => t.member_id === m?.id)}
+                    isTopContributor={m?.id === topContributor?.member_id && topContributor?.month === new Date().toISOString().slice(0, 7)}
+                    profile={memberProfiles[m?.id ?? ""]}
+                  />
                   <span className="flex-1 font-medium text-foreground">
                     <span className={isMe ? "text-primary font-bold" : ""}>
-                      {m?.name ?? "—"}
+                      {getDisplayName(r.memberId, members, memberProfiles)}
                     </span>
                     {isMe && (
-                      <span className="ml-1.5 text-xs text-muted-foreground">(You)</span>
+                      <span className="ml-1.5 text-xs text-muted-foreground">({t('common.you', "You")})</span>
                     )}
                     {isNext && !isMe && (
-                      <span className="ml-2 text-xs font-bold text-primary">← next</span>
+                      <span className="ml-2 text-xs font-bold text-primary">← {t('cleaning.next_tag', "next")}</span>
                     )}
                   </span>
                   <span className="text-xs text-muted-foreground">
@@ -223,7 +244,7 @@ const CleaningTab = ({
               );
             })
           ) : (
-            <p className="text-sm text-muted-foreground px-5 py-4">No upcoming schedule yet.</p>
+            <p className="text-sm text-muted-foreground px-5 py-4">{t('cleaning.no_upcoming', "No upcoming schedule yet.")}</p>
           )}
         </div>
       </section>

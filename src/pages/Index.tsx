@@ -19,6 +19,7 @@ type Screen = "splash" | "landing" | "setup" | "join" | "app";
 
 const Index = () => {
   const [screen,  setScreen]  = useState<Screen>("splash");
+  const [splashFinished, setSplashFinished] = useState(false);
   const [appData, setAppData] = useState<{
     user:                   Member;
     house:                  House;
@@ -36,18 +37,34 @@ const Index = () => {
 
   // ── On mount: check for a saved session ───────────────────────────
   useEffect(() => {
+    // Start splash timer (minimum 2.5 seconds for brand presence)
+    const splashTimer = setTimeout(() => {
+      setSplashFinished(true);
+    }, 2500);
+
     const savedCode     = localStorage.getItem(SK_CODE);
     const savedMemberId = localStorage.getItem(SK_MEMBER_ID);
 
     if (savedCode && savedMemberId) {
-      // Returning user — restore their session silently, skip splash+landing
+      // Returning user — fetch data silently
       restoreSession(savedCode, savedMemberId);
     } else {
-      // New user — show splash then landing
-      const t = setTimeout(() => setScreen("landing"), 2200);
-      return () => clearTimeout(t);
+      // New user — will go to landing after splash timer
     }
+
+    return () => clearTimeout(splashTimer);
   }, []);
+
+  // ── Move to next screen only when splash is done ─────────────────
+  useEffect(() => {
+    if (!splashFinished) return;
+
+    if (appData) {
+      setScreen("app");
+    } else if (!localStorage.getItem(SK_CODE)) {
+      setScreen("landing");
+    }
+  }, [splashFinished, appData]);
 
   // ── Restore session from Supabase using saved house code + member id
   const restoreSession = async (code: string, memberId: string) => {
@@ -106,7 +123,8 @@ const Index = () => {
         suppliesRotationOrder,
         initialHouseSettings:   houseSettings,
       });
-      setScreen("app");
+      // Data is ready, but we don't setScreen("app") here anymore. 
+      // The second useEffect handles the transition after splashFinished.
 
     } catch (err) {
       console.error("Session restore failed:", err);

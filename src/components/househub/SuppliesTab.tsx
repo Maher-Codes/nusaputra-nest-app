@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Member, Purchase, Supply } from "@/lib/househub";
+import { Member, Purchase, Supply, TravelMode, TopContributor, MemberProfile, getDisplayName } from "@/lib/househub";
 import { CheckCircle2 } from "lucide-react";
+import Avatar from "./Avatar";
+import { useTranslation } from "react-i18next";
 
 interface SuppliesTabProps {
   user:                  Member | null;
@@ -11,42 +13,12 @@ interface SuppliesTabProps {
   nextBuyerByItem:       Record<string, Member | null>;
   activeSupplies:        Supply[];
   suppliesRotationOrder: string[];
+  activeTravelModes:     TravelMode[];
+  topContributor:        TopContributor | null;
+  memberProfiles:        Record<string, MemberProfile>;
 }
 
-// Celebration messages per supply item
-const SUPPLY_MESSAGES: Record<string, { emoji: string; msgs: string[] }> = {
-  "Water": {
-    emoji: "💧",
-    msgs: [
-      "Staying hydrated! Amazing!",
-      "Water secured! The house loves you!",
-      "No thirst on your watch! 🙌",
-    ],
-  },
-  "Gas": {
-    emoji: "🔥",
-    msgs: [
-      "Cooking is back on! Legend!",
-      "Gas secured! Hot meals incoming!",
-      "You're literally keeping the house warm! ❤️",
-    ],
-  },
-  "Soap & Sponge": {
-    emoji: "🫧",
-    msgs: [
-      "Cleanliness champion right here!",
-      "Bubbles of appreciation for you!",
-      "The dishes thank you personally! 🍽️",
-    ],
-  },
-};
-
-const getRandMsg = (itemLabel: string) => {
-  const entry = SUPPLY_MESSAGES[itemLabel];
-  if (!entry) return { emoji: "🛒", msg: "Purchase saved! Thank you!" };
-  const msg = entry.msgs[Math.floor(Math.random() * entry.msgs.length)];
-  return { emoji: entry.emoji, msg };
-};
+// Celebration messages moved to locale
 
 const SuppliesTab = ({
   user,
@@ -57,7 +29,11 @@ const SuppliesTab = ({
   nextBuyerByItem,
   activeSupplies,
   suppliesRotationOrder,
+  activeTravelModes,
+  topContributor,
+  memberProfiles,
 }: SuppliesTabProps) => {
+  const { t } = useTranslation();
   const [confirmingItem, setConfirmingItem] = useState<string | null>(null);
   const [celebrationMap, setCelebrationMap] = useState<Record<string, { emoji: string; msg: string } | null>>({});
   const [pressingItem,   setPressingItem]   = useState<string | null>(null);
@@ -65,16 +41,27 @@ const SuppliesTab = ({
   const handleConfirm = (supply: Supply) => {
     if (pressingItem) return;
     setPressingItem(supply.id);
-    setTimeout(() => {
-      doBuy(supply);
-      const { emoji, msg } = getRandMsg(supply.label);
-      setCelebrationMap(prev => ({ ...prev, [supply.id]: { emoji, msg } }));
-      setConfirmingItem(null);
-      setPressingItem(null);
       setTimeout(() => {
-        setCelebrationMap(prev => ({ ...prev, [supply.id]: null }));
-      }, 4000);
-    }, 180);
+        doBuy(supply);
+        
+        // Get random message from locale
+        const messagesObj = t('supplies.messages', { returnObjects: true }) as any;
+        const itemMessages = messagesObj[supply.label] || ["Purchase saved! Thank you!"];
+        const randomIndex = Math.floor(Math.random() * itemMessages.length);
+        
+        const emojis: Record<string, string> = { "Water": "💧", "Gas": "🔥", "Soap & Sponge": "🫧" };
+        const emoji = emojis[supply.label] || "🛒";
+        
+        setCelebrationMap(prev => ({ 
+          ...prev, 
+          [supply.id]: { emoji, msg: itemMessages[randomIndex] } 
+        }));
+        setConfirmingItem(null);
+        setPressingItem(null);
+        setTimeout(() => {
+          setCelebrationMap(prev => ({ ...prev, [supply.id]: null }));
+        }, 4000);
+      }, 180);
   };
 
   return (
@@ -83,7 +70,7 @@ const SuppliesTab = ({
       {/* SECTION 1 — Per-item responsibility cards */}
       <section>
         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
-          Next Buyer — Per Item
+          {t('supplies.next_buyer', "Next Buyer — Per Item")}
         </h3>
         <div className="flex flex-col gap-3">
           {activeSupplies.map(s => {
@@ -119,20 +106,23 @@ const SuppliesTab = ({
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl transition-transform duration-300 ${
+                      className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl transition-transform duration-300 relative ${
                         isMyTurn ? "scale-110" : ""
                       }`}
                       style={{ background: s.bg }}
                     >
                       {s.icon}
+                      {activeTravelModes.some(t => t.member_id === nextBuyer?.id) && (
+                        <span className="absolute -top-1 -right-1 text-[10px] bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm border border-blue-500">✈️</span>
+                      )}
                     </div>
                     <div>
                       <p className="font-bold text-foreground text-base leading-tight">{s.label}</p>
                       <p className="text-sm text-muted-foreground mt-0.5">
-                        Next:{" "}
+                        {t('supplies.next', "Next")}:{" "}
                         <span className={`font-semibold ${isMyTurn ? "text-accent" : "text-foreground"}`}>
-                          {nextBuyer?.name ?? "—"}
-                          {isMyTurn && " (You)"}
+                          {getDisplayName(nextBuyerId ?? "", members, memberProfiles)}
+                          {isMyTurn && ` (${t('common.you', "You")})`}
                         </span>
                       </p>
                     </div>
@@ -147,7 +137,7 @@ const SuppliesTab = ({
                         active:scale-95"
                       onClick={() => setConfirmingItem(s.id)}
                     >
-                      I bought it
+                      {t('supplies.i_bought_it', "I bought it")}
                     </button>
                   )}
 
@@ -176,14 +166,14 @@ const SuppliesTab = ({
                       onClick={() => handleConfirm(s)}
                       disabled={!!isPressing}
                     >
-                      {isPressing ? "Saving…" : `✓ Confirm ${s.label}`}
+                      {isPressing ? t('common.saving', "Saving…") : `✓ ${t('supplies.confirm_item', { item: s.label, defaultValue: `Confirm ${s.label}` })}`}
                     </button>
                     <button
                       className="flex-1 py-2.5 rounded-xl bg-muted text-muted-foreground font-bold text-sm
                         hover:bg-muted/80 active:scale-95 transition-all duration-200"
                       onClick={() => setConfirmingItem(null)}
                     >
-                      Cancel
+                      {t('common.cancel', "Cancel")}
                     </button>
                   </div>
                 )}
@@ -205,7 +195,7 @@ const SuppliesTab = ({
                 {upcomingTurns.length > 0 && (
                   <div className="border-t border-border/50">
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-4 pt-3 pb-2">
-                      Upcoming Turns
+                      {t('supplies.upcoming_turns', "Upcoming Turns")}
                     </p>
                     {upcomingTurns.map((m, i) => {
                       const isMe   = m.id === user?.id;
@@ -219,18 +209,25 @@ const SuppliesTab = ({
                           <span className={`font-display font-bold w-5 shrink-0 text-sm ${isNext ? "text-primary" : "text-muted-foreground"}`}>
                             {i + 1}.
                           </span>
+                          <Avatar 
+                            member={m} 
+                            profile={memberProfiles[m.id]}
+                            name={getDisplayName(m.id, members, memberProfiles)}
+                            size={24} 
+                            fontSize={10} 
+                            radius={6} 
+                            isTravelling={activeTravelModes.some(t => t.member_id === m.id)}
+                            isTopContributor={m.id === topContributor?.member_id && topContributor?.month === new Date().toISOString().slice(0, 7)}
+                          />
                           <span className="flex-1 font-medium text-foreground">
                             <span className={isMe ? "text-primary font-bold" : ""}>
-                              {m.name}
+                              {getDisplayName(m.id, members, memberProfiles)}
                             </span>
                             {isMe && (
-                              <span className="ml-1.5 text-xs text-muted-foreground">(You)</span>
+                              <span className="ml-1.5 text-xs text-muted-foreground">({t('common.you', "You")})</span>
                             )}
-                            {isNext && !isMe && (
-                              <span className="ml-2 text-xs font-bold text-primary">← next</span>
-                            )}
-                            {isNext && isMe && (
-                              <span className="ml-2 text-xs font-bold text-primary">← next</span>
+                            {isNext && (
+                              <span className="ml-2 text-xs font-bold text-primary">← {t('cleaning.next_tag', "next")}</span>
                             )}
                           </span>
                         </div>

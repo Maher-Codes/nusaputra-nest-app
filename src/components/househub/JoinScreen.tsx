@@ -1,10 +1,12 @@
 import { useState, useRef } from "react";
 import {
   Member, House, CleanRecord, Purchase, SupplyResponsibility,
-  ActivityLog, RotationEntry, buildRotation, fmtDate,
+  ActivityLog, RotationEntry, buildRotation,
+  avatarColor
 } from "@/lib/househub";
 import Avatar from "./Avatar";
 import { houseService } from "@/services/houseService";
+import { useTranslation } from "react-i18next";
 
 interface JoinScreenProps {
   enterApp: (
@@ -24,6 +26,7 @@ interface JoinScreenProps {
 }
 
 const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
+  const { t } = useTranslation();
   const [step, setStep]     = useState<"code" | "name">("code");
   const [digits, setDig]    = useState(["", "", "", "", "", ""]);
   const [error, setError]   = useState("");
@@ -84,7 +87,7 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
       const house = await houseService.getHouseByCode(code);
 
       if (!house) {
-        setError("House not found. Please check the code and try again.");
+        setError(t('join.invalid_code', "Invalid house code. Please check with your housemates."));
         setDig(["", "", "", "", "", ""]);
         setTimeout(() => refs.current[0]?.focus(), 50);
         return;
@@ -126,7 +129,7 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
 
     } catch (err) {
       console.error("[JoinScreen] Error:", err);
-      setError("An error occurred. Please try again.");
+      setError(t('join.error_find', "An error occurred. Please try again."));
     } finally {
       setLoad(false);
     }
@@ -137,31 +140,49 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
     setChosen(m.id);
     if (!currentHouse) return;
 
-    // Build rotation from the most recent clean record
-    // Most recent cleaner is dbCleanRecs[0] (sorted newest first by houseService)
-    const lastCleanerId  = dbCleanRecs[0]?.member_id ?? null;
-    const lastCleanerIdx = lastCleanerId
-      ? dbMembers.findIndex(x => x.id === lastCleanerId)
-      : 0;
+    const defaultProfile = {
+      id: m.id,
+      nickname: m.name.split(" ")[0],
+      avatar_color: avatarColor(m.name),
+      country_code: "",
+      language: "en",
+      reminders: { cleaning: true, supplies: true, travel: true, reports: true },
+      updated_at: new Date().toISOString()
+    };
 
-    const rotation = buildRotation(
-      dbMembers,
-      Math.max(0, lastCleanerIdx)
-    );
+    finishAndEnter(m, defaultProfile);
+  };
 
-    // Extract rotation orders from house settings, fall back to DB insertion order
-    const cleaningRotationOrder: string[] = dbHouseSettings?.cleaning_rotation_order?.length
-      ? dbHouseSettings.cleaning_rotation_order
-      : dbMembers.map((x: Member) => x.id);
+  const finishAndEnter = async (m: Member, profile: any) => {
+    if (!m || !currentHouse || !profile) return;
 
-    const suppliesRotationOrder: string[] = dbHouseSettings?.supplies_rotation_order?.length
-      ? dbHouseSettings.supplies_rotation_order
-      : dbMembers.map((x: Member) => x.id);
+    setLoad(true);
+    try {
+      // 1. Save profile
+      await houseService.saveMemberProfile(currentHouse.id, profile);
 
-    setTimeout(
-      () => enterApp(m, currentHouse, dbMembers, dbCleanRecs, dbPurchases, [], rotation, dbSupplyResps, dbHouseSettings?.cleaning_enabled ?? true, cleaningRotationOrder, suppliesRotationOrder),
-      450
-    );
+      // 2. Build rotation & enter
+      const lastCleanerId  = dbCleanRecs[0]?.member_id ?? null;
+      const lastCleanerIdx = lastCleanerId
+        ? dbMembers.findIndex(x => x.id === lastCleanerId)
+        : 0;
+
+      const rotation = buildRotation(dbMembers, Math.max(0, lastCleanerIdx));
+
+      const cleaningRotationOrder = dbHouseSettings?.cleaning_rotation_order?.length
+        ? dbHouseSettings.cleaning_rotation_order
+        : dbMembers.map((x: Member) => x.id);
+
+      const suppliesRotationOrder = dbHouseSettings?.supplies_rotation_order?.length
+        ? dbHouseSettings.supplies_rotation_order
+        : dbMembers.map((x: Member) => x.id);
+
+      enterApp(m, currentHouse, dbMembers, dbCleanRecs, dbPurchases, [], rotation, dbSupplyResps, dbHouseSettings?.cleaning_enabled ?? true, cleaningRotationOrder, suppliesRotationOrder);
+    } catch (err) {
+      console.error("Join finish failed:", err);
+    } finally {
+      setLoad(false);
+    }
   };
 
   // ── Render ─────────────────────────────────────────────────────────
@@ -181,16 +202,16 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
               className="px-4 py-2 rounded-xl border-2 border-secondary/40 text-secondary text-xs font-bold cursor-pointer hover:bg-secondary/5 transition-all active:scale-95"
               onClick={onBack}
             >
-              ← Back
+              ← {t('common.back', "Back")}
             </button>
           </div>
           <h2 className="font-display font-extrabold text-3xl text-primary mb-1.5">
-            {step === "code" ? "Join Your NusaNest" : "✅ Code verified!"}
+            {step === "code" ? t('join.title', "Join Your NusaNest") : t('join.welcome_house', "Welcome to the house!")}
           </h2>
           <p className="text-muted-foreground text-sm font-medium">
             {step === "code"
-              ? "Enter the 6-digit code shared by your housemate."
-              : "Select your name to load your dashboard."}
+              ? t('join.subtitle', "Enter the 6-digit code shared by your housemate.")
+              : t('join.personalize_desc', "Select your name to load your dashboard.")}
           </p>
         </div>
       </div>
@@ -233,7 +254,7 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
               onClick={verify}
               disabled={!digits.every(d => d) || loading}
             >
-              {loading ? "Verifying..." : "Join House →"}
+              {loading ? t('join.checking', "Verifying...") : t('join.enter_code', "Join House →")}
             </button>
 
             <p className="text-muted-foreground/60 text-[11px] text-center font-bold uppercase tracking-widest">
@@ -242,42 +263,26 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
           </div>
         )}
 
-        {/* STEP: Select name */}
+        {/* STEP: Select your name */}
         {step === "name" && (
-          <div className="flex flex-col gap-3 animate-fade-up">
-            <p className="text-muted-foreground text-sm mb-1">
-              Select your name from the list:
+          <div className="flex flex-col gap-3 w-full">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">
+              {t('join.who_are_you', 'Who are you?')}
             </p>
-
-            {dbMembers.length > 0 ? (
-              dbMembers.map((m, i) => (
-                <button
-                  key={m.id}
-                  className={`w-full p-5 rounded-3xl border-2 bg-card text-left font-semibold flex items-center gap-4 transition-all duration-200 hover:border-primary hover:bg-primary/5 hover:translate-x-1 animate-fade-up shadow-sm ${
-                    chosen === m.id ? "border-primary bg-primary/5" : "border-border"
-                  }`}
-                  style={{ animationDelay: `${i * 0.07}s` }}
-                  onClick={() => choose(m)}
-                >
-                  <Avatar name={m.name || "Unknown"} size={50} radius={16} fontSize={20} />
-                  <div className="flex-1">
-                    <div className="text-lg text-foreground">{m.name || "Unknown"}</div>
-                    <div className="font-normal text-xs text-muted-foreground mt-0.5">
-                      {/* DB column is created_at, not joined_at */}
-                      Joined {fmtDate(m.created_at || new Date().toISOString(), { month: "short", day: "numeric" })}
-                    </div>
-                  </div>
-                  {chosen === m.id && <span className="text-primary text-xl">✓</span>}
-                </button>
-              ))
-            ) : (
-              <p className="text-muted-foreground text-sm text-center mt-4">
-                No members found for this house.
-              </p>
-            )}
+            {dbMembers.map(m => (
+              <button
+                key={m.id}
+                onClick={() => choose(m)}
+                className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-border hover:border-primary/40 hover:bg-primary/5 transition-all text-left active:scale-[0.98]"
+              >
+                <Avatar member={m} size={44} radius={13} fontSize={17} />
+                <span className="font-bold text-base text-foreground">
+                  {m.name.charAt(0).toUpperCase() + m.name.slice(1)}
+                </span>
+              </button>
+            ))}
           </div>
         )}
-
       </div>
     </div>
   );
