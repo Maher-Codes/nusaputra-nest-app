@@ -1,7 +1,9 @@
 import { useState, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
-  Member, House, CleanRecord, Purchase, ActivityLog,
-  RotationEntry, Supply, SupplyResponsibility, buildRotation, fmtDate, DAY_LABELS,
+  Member, House, CleanRecord, Purchase, SupplyResponsibility,
+  ActivityLog, RotationEntry, buildRotation, fmtDate, DAY_LABELS,
+  avatarColor, COUNTRIES, AV_COLORS, Supply
 } from "@/lib/househub";
 import Avatar from "./Avatar";
 import { houseService } from "@/services/houseService";
@@ -63,7 +65,8 @@ const EMOJI_PICKER = [
 // 7  — Starting point (who bought/cleaned last)
 // 8  — House code reveal
 // 9  — Who are you?
-const TOTAL_STEPS = 10;
+// 10 — Profile personalization (Optional)
+const TOTAL_STEPS = 11;
 
 const inputClass  = "w-full px-4 py-3.5 rounded-xl border border-border bg-card text-foreground text-base font-medium focus:outline-none focus:border-primary transition-colors";
 const btnPrimary  = "w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-base shadow-md hover:bg-primary/95 hover:translate-y-[-1px] active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none";
@@ -82,6 +85,7 @@ const swapItems = (arr: string[], i: number, j: number): string[] => {
 };
 
 const SetupWizard = ({ enterApp }: SetupWizardProps) => {
+  const { t, i18n } = useTranslation();
   const [step,        setStep]  = useState(0);
   const [houseName,   setHN]    = useState("");
   const [count,       setCount] = useState("");
@@ -106,6 +110,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
   const [isGenerating, setIsGen]  = useState(false);
   const [copied,       setCopied] = useState(false);
   const [chosen,       setChosen] = useState<string | null>(null);
+  const [profile,      setProfile] = useState<any | null>(null);
   const [error,        setError]  = useState<string | null>(null);
 
   const realHouseRef   = useRef<House | null>(null);
@@ -116,23 +121,21 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
     const d     = new Date(today);
     const diff  = (cleaningDay - today.getDay() + 7) % 7 || 7;
     d.setDate(today.getDate() + diff);
-    return { date: d, label: fmtDate(d, { weekday: "long", month: "short", day: "numeric" }) };
-  }, [cleaningDay]);
+    return { date: d, label: d.toLocaleDateString(i18n.language, { weekday: "long", month: "short", day: "numeric" }) };
+  }, [cleaningDay, i18n.language]);
 
   const lastCleaningDate = useMemo(() => {
     const today = new Date();
     const d     = new Date(today);
     const diff  = (today.getDay() - cleaningDay + 7) % 7 || 7;
     d.setDate(today.getDate() - diff);
-    return { date: d, label: fmtDate(d, { weekday: "long", month: "short", day: "numeric" }) };
-  }, [cleaningDay]);
+    return { date: d, label: d.toLocaleDateString(i18n.language, { weekday: "long", month: "short", day: "numeric" }) };
+  }, [cleaningDay, i18n.language]);
 
   // ── Navigation ─────────────────────────────────────────────────────────
   const goNext = () => setStep(s => Math.min(s + 1, TOTAL_STEPS - 1));
   const goBack = () => {
     setStep(s => {
-      // When going back from step 4 (supplies rotation) and cleaning is disabled,
-      // skip step 3 (cleaning rotation) and go directly to step 2.
       if (s === 4 && !cleaningEnabled) return 2;
       return Math.max(s - 1, 0);
     });
@@ -184,7 +187,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         value={resp[itemId]?.[field] ?? ""}
         onChange={e => setRespField(itemId, field, e.target.value)}
       >
-        <option value="" disabled>Select a person…</option>
+        <option value="" disabled>{t('common.select_person', "Select a person…")}</option>
         {names.filter(n => n.trim()).map(n => <option key={n} value={n}>{n}</option>)}
       </select>
     </div>
@@ -201,7 +204,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
   ) => (
     <div className="flex flex-col gap-4 animate-fade-up">
       <div className="flex justify-between items-start">
-        <button className={btnOutline} onClick={goBack}>← Back</button>
+        <button className={btnOutline} onClick={goBack}>← {t('common.back', "Back")}</button>
         <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
       </div>
       <div className="mb-1">
@@ -255,7 +258,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
       </p>
 
       <button className={btnPrimary} onClick={onContinue}>
-        Confirm order <ChevronRight size={16} className="inline ml-1" />
+        {t('setup.confirm_order', "Confirm order")} <ChevronRight size={16} className="inline ml-1" />
       </button>
     </div>
   );
@@ -372,7 +375,41 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
     );
   };
 
-  const chooseMember = (m: Member) => { setChosen(m.id); setTimeout(() => buildAndEnter(m), 450); };
+  const chooseMember = (m: Member | null) => { 
+    if (!m) return;
+    setChosen(m.id); 
+    // Instead of entering immediately, go to profile setup step
+    setTimeout(() => {
+      setProfile({
+        id: m.id,
+        nickname: m.name.split(" ")[0],
+        avatar_color: avatarColor(m.name),
+        country_code: "",
+        language: "en",
+        reminders: { cleaning: true, supplies: true, travel: true, reports: true },
+        updated_at: new Date().toISOString()
+      });
+      setStep(10); 
+    }, 450); 
+  };
+
+  const finishAndEnter = async () => {
+    const m = realMembersRef.current.find(m => m.id === chosen);
+    if (!m || !profile) return;
+    
+    setIsGen(true);
+    try {
+      // Save profile if they customized it (or even if they didn't, to set defaults)
+      await houseService.saveMemberProfile(realHouseRef.current!.id, profile);
+      buildAndEnter(m);
+    } catch (err) {
+      console.error("Profile save failed:", err);
+      // Still enter app even if profile fails
+      buildAndEnter(m);
+    } finally {
+      setIsGen(false);
+    }
+  };
   const copyCode = () => { navigator.clipboard?.writeText(code).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
   return (
@@ -383,7 +420,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         <div className="max-w-lg mx-auto">
           <div className="flex items-center justify-between mb-3">
             <h1 className="font-display font-black text-xl text-primary">NusaNest</h1>
-            <span className="text-xs font-bold text-muted-foreground">Step {step + 1} of {TOTAL_STEPS}</span>
+            <span className="text-xs font-bold text-muted-foreground">{t('setup.step_count', { current: step + 1, total: TOTAL_STEPS, defaultValue: `Step ${step + 1} of ${TOTAL_STEPS}` })}</span>
           </div>
           <div className="flex gap-1">
             {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
@@ -408,13 +445,13 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
             </div>
             <div className="mb-2">
               <p className="text-4xl mb-3">🏠</p>
-              <h2 className="font-display font-black text-2xl text-foreground mb-1">Name your NusaNest</h2>
-              <p className="text-muted-foreground text-sm font-medium">Give your house a memorable name that your housemates will recognise.</p>
+              <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.house_name.title', "Name your NusaNest")}</h2>
+              <p className="text-muted-foreground text-sm font-medium">{t('setup.steps.house_name.desc', "Give your house a memorable name that your housemates will recognise.")}</p>
             </div>
-            <input type="text" className={inputClass} placeholder='"The Green House", "Apartment 4B"…'
+            <input type="text" className={inputClass} placeholder={t('setup.steps.house_name.placeholder', '"The Green House", "Apartment 4B"…')}
               value={houseName} onChange={e => setHN(e.target.value)}
               onKeyDown={e => e.key === "Enter" && v0 && goNext()} autoFocus />
-            <button className={btnPrimary} onClick={goNext} disabled={!v0}>Continue <ChevronRight size={16} className="inline ml-1" /></button>
+            <button className={btnPrimary} onClick={goNext} disabled={!v0}>{t('common.next', "Continue")} <ChevronRight size={16} className="inline ml-1" /></button>
           </div>
         )}
 
@@ -422,15 +459,15 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {step === 1 && (
           <div className="flex flex-col gap-4 animate-fade-up">
             <div className="flex justify-between items-start">
-              <button className={btnOutline} onClick={goBack}>← Back</button>
+              <button className={btnOutline} onClick={goBack}>← {t('common.back', "Back")}</button>
               <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
             </div>
             <div className="mb-2">
               <p className="text-4xl mb-3">👥</p>
-              <h2 className="font-display font-black text-2xl text-foreground mb-1">How many housemates?</h2>
-              <p className="text-muted-foreground text-sm">Including yourself — how many people live in <b>{houseName}</b>?</p>
+              <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.member_count.title', "How many housemates?")}</h2>
+              <p className="text-muted-foreground text-sm">{t('setup.steps.member_count.desc', { house: houseName, defaultValue: `Including yourself — how many people live in ${houseName}?` })}</p>
             </div>
-            <input type="number" className={inputClass} placeholder="e.g. 4" min={2} max={20}
+            <input type="number" className={inputClass} placeholder={t('setup.steps.member_count.placeholder', "e.g. 4")} min={2} max={20}
               value={count} onChange={e => setCount(e.target.value)}
               onKeyDown={e => e.key === "Enter" && v1 && handleCount()} autoFocus />
             <div className="flex gap-2 flex-wrap">
@@ -440,7 +477,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
                   onClick={() => setCount(String(n))}>{n}</button>
               ))}
             </div>
-            <button className={btnPrimary} onClick={handleCount} disabled={!v1}>Continue <ChevronRight size={16} className="inline ml-1" /></button>
+            <button className={btnPrimary} onClick={handleCount} disabled={!v1}>{t('common.next', "Continue")} <ChevronRight size={16} className="inline ml-1" /></button>
           </div>
         )}
 
@@ -448,30 +485,30 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {step === 2 && (
           <div className="flex flex-col gap-3 animate-fade-up">
             <div className="flex justify-between items-start mb-2">
-              <button className={btnOutline} onClick={goBack}>← Back</button>
+              <button className={btnOutline} onClick={goBack}>← {t('common.back', "Back")}</button>
               <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
             </div>
             <div className="mb-1">
               <p className="text-4xl mb-3">✍️</p>
-              <h2 className="font-display font-black text-2xl text-foreground mb-1">Who lives there?</h2>
-              <p className="text-muted-foreground text-sm">Enter each housemate's name.</p>
+              <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.member_names.title', "Who lives there?")}</h2>
+              <p className="text-muted-foreground text-sm">{t('setup.steps.member_names.desc', "Enter each housemate's name.")}</p>
             </div>
             {names.map((n, i) => (
               <div key={i} className="animate-fade-up" style={{ animationDelay: `${i * 0.05}s` }}>
-                <label className="text-xs font-bold text-muted-foreground tracking-wider uppercase block mb-1.5">Person {i + 1}</label>
-                <input type="text" className={inputClass} placeholder={`Name of person ${i + 1}`}
+                <label className="text-xs font-bold text-muted-foreground tracking-wider uppercase block mb-1.5">{t('setup.steps.member_names.label', { index: i + 1, defaultValue: `Person ${i + 1}` })}</label>
+                <input type="text" className={inputClass} placeholder={t('setup.steps.member_names.placeholder', { index: i + 1, defaultValue: `Name of person ${i + 1}` })}
                   value={n} onChange={e => setNames(p => p.map((v, j) => j === i ? e.target.value : v))} />
               </div>
             ))}
-            <button className={`${btnPrimary} mt-2`} onClick={handleNamesComplete} disabled={!v2}>Continue <ChevronRight size={16} className="inline ml-1" /></button>
+            <button className={`${btnPrimary} mt-2`} onClick={handleNamesComplete} disabled={!v2}>{t('common.next', "Continue")} <ChevronRight size={16} className="inline ml-1" /></button>
           </div>
         )}
 
         {/* ── STEP 3 — Cleaning rotation order (only if cleaningEnabled) ── */}
         {step === 3 && cleaningEnabled && renderRotationStep(
-          "What is the cleaning rotation order?",
-          "Set the order for cleaning turns. The house follows this exact sequence.",
-          "This order repeats forever. After the last person it goes back to the first.",
+          t('setup.steps.cleaning_rotation.title', "What is the cleaning rotation order?"),
+          t('setup.steps.cleaning_rotation.subtitle', "Set the order for cleaning turns. The house follows this exact sequence."),
+          t('setup.steps.cleaning_rotation.note', "This order repeats forever. After the last person it goes back to the first."),
           cleaningRotationOrder,
           setCleaningRotationOrder,
           goNext,
@@ -479,9 +516,9 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
 
         {/* ── STEP 4 — Supplies rotation order (always shown) ── */}
         {step === 4 && renderRotationStep(
-          "What is the supplies rotation order?",
-          "Set the order for buying shared supplies. This applies to all items equally.",
-          "This order applies to all shared items. After the last person it goes back to the first.",
+          t('setup.steps.supplies_rotation.title', "What is the supplies rotation order?"),
+          t('setup.steps.supplies_rotation.subtitle', "Set the order for buying shared supplies. This applies to all items equally."),
+          t('setup.steps.supplies_rotation.note', "This order applies to all shared items. After the last person it goes back to the first."),
           suppliesRotationOrder,
           setSuppliesRotationOrder,
           goNext,
@@ -491,13 +528,13 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {step === 5 && (
           <div className="flex flex-col gap-5 animate-fade-up">
             <div className="flex justify-between items-start">
-              <button className={btnOutline} onClick={goBack}>← Back</button>
+              <button className={btnOutline} onClick={goBack}>← {t('common.back', "Back")}</button>
               <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
             </div>
             <div>
               <p className="text-4xl mb-3">🛒</p>
-              <h2 className="font-display font-black text-2xl text-foreground mb-1">What do you share?</h2>
-              <p className="text-muted-foreground text-sm font-medium">Select everything your house buys together. Add your own items too — every house is different.</p>
+              <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.share_items.title', "What do you share?")}</h2>
+              <p className="text-muted-foreground text-sm font-medium">{t('setup.steps.share_items.desc', "Select everything your house buys together. Add your own items too — every house is different.")}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5">
@@ -525,7 +562,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
 
             {showCustomForm ? (
               <div className="flex flex-col gap-3 p-4 rounded-2xl bg-muted/40 border border-border">
-                <p className="text-sm font-bold text-foreground">Add your own item</p>
+                <p className="text-sm font-bold text-foreground">{t('setup.steps.share_items.add_custom', "Add your own item")}</p>
 
                 {/* Emoji picker grid */}
                 <div className="overflow-x-auto">
@@ -550,26 +587,26 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
                   ))}
                 </div>
 
-                <input className={`${inputClass}`} placeholder="e.g. Trash bags, Bread…"
+                <input className={`${inputClass}`} placeholder={t('setup.steps.share_items.custom_placeholder', "e.g. Trash bags, Bread…")}
                   value={customLabel} onChange={e => setCustomLabel(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && addCustomSupply()} autoFocus />
 
                 <div className="flex gap-2">
                   <button className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
-                    onClick={addCustomSupply} disabled={!customLabel.trim()}>Add item</button>
+                    onClick={addCustomSupply} disabled={!customLabel.trim()}>{t('setup.steps.share_items.add_btn', "Add item")}</button>
                   <button className="flex-1 py-2.5 rounded-xl bg-muted text-muted-foreground font-bold text-sm active:scale-95 transition-all"
-                    onClick={() => { setShowCustomForm(false); setCustomLabel(""); setCustomEmoji("📦"); }}>Cancel</button>
+                    onClick={() => { setShowCustomForm(false); setCustomLabel(""); setCustomEmoji("📦"); }}>{t('common.cancel', "Cancel")}</button>
                 </div>
               </div>
             ) : (
               <button className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/40 font-semibold text-sm transition-all"
                 onClick={() => setShowCustomForm(true)}>
-                <Plus size={16} /> Add your own item
+                <Plus size={16} /> {t('setup.steps.share_items.add_custom', "Add your own item")}
               </button>
             )}
 
             <button className={btnPrimary} onClick={goNext} disabled={!v3}>
-              Continue with {selectedSupplies.length} item{selectedSupplies.length !== 1 ? "s" : ""} <ChevronRight size={16} className="inline ml-1" />
+              {t('setup.steps.share_items.continue_count', { count: selectedSupplies.length, defaultValue: `Continue with ${selectedSupplies.length} items` })} <ChevronRight size={16} className="inline ml-1" />
             </button>
           </div>
         )}
@@ -578,19 +615,19 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {step === 6 && (
           <div className="flex flex-col gap-5 animate-fade-up">
             <div className="flex justify-between items-start">
-              <button className={btnOutline} onClick={goBack}>← Back</button>
+              <button className={btnOutline} onClick={goBack}>← {t('common.back', "Back")}</button>
               <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
             </div>
             <div>
               <p className="text-4xl mb-3">🧹</p>
-              <h2 className="font-display font-black text-2xl text-foreground mb-1">Cleaning schedule?</h2>
-              <p className="text-muted-foreground text-sm font-medium">Does your house rotate cleaning duties?</p>
+              <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.cleaning_schedule.title', "Cleaning schedule?")}</h2>
+              <p className="text-muted-foreground text-sm font-medium">{t('setup.steps.cleaning_schedule.desc', "Does your house rotate cleaning duties?")}</p>
             </div>
 
             <div className="flex gap-3">
-              {[{ v: true, label: "✅ Yes, we rotate" }, { v: false, label: "❌ No schedule" }].map(opt => (
+              {[{ v: true, label: t('setup.steps.cleaning_schedule.yes', "✅ Yes, we rotate") }, { v: false, label: t('setup.steps.cleaning_schedule.no', "❌ No schedule") }].map(opt => (
                 <button key={String(opt.v)} onClick={() => setCleaningEnabled(opt.v)}
-                  className={`flex-1 py-3.5 rounded-xl font-bold text-sm border-2 transition-all duration-200 active:scale-95 ${cleaningEnabled === opt.v ? "border-primary bg-primary/8 text-foreground shadow-sm" : "border-border bg-card text-muted-foreground hover:border-primary/40"}`}>
+                  className={`flex-1 py-3.5 rounded-xl font-bold text-sm border-2 transition-all duration-200 active:scale-[0.95] ${cleaningEnabled === opt.v ? "border-primary bg-primary/8 text-foreground shadow-sm" : "border-border bg-card text-muted-foreground hover:border-primary/40"}`}>
                   {opt.label}
                 </button>
               ))}
@@ -599,23 +636,23 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
             {cleaningEnabled && (
               <>
                 <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-2">How often?</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-2">{t('setup.steps.cleaning_schedule.frequency', "How often?")}</label>
                   <div className="flex gap-2">
-                    {[{ v: "weekly", label: "Weekly" }, { v: "biweekly", label: "Every 2 weeks" }, { v: "monthly", label: "Monthly" }].map(opt => (
+                    {[{ v: "weekly", label: t('settings.cleaning.freq_options.weekly', "Weekly") }, { v: "biweekly", label: t('settings.cleaning.freq_options.biweekly', "Every 2 weeks") }, { v: "monthly", label: t('settings.cleaning.freq_options.monthly', "Monthly") }].map(opt => (
                       <button key={opt.v} onClick={() => setCleaningFrequency(opt.v as any)}
-                        className={`flex-1 py-2.5 rounded-xl font-bold text-xs border-2 transition-all active:scale-95 ${cleaningFrequency === opt.v ? "border-primary bg-primary/8 text-foreground" : "border-border bg-card text-muted-foreground hover:border-primary/40"}`}>
+                        className={`flex-1 py-2.5 rounded-xl font-bold text-xs border-2 transition-all active:scale-[0.95] ${cleaningFrequency === opt.v ? "border-primary bg-primary/8 text-foreground" : "border-border bg-card text-muted-foreground hover:border-primary/40"}`}>
                         {opt.label}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-2">Which day?</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-2">{t('setup.steps.cleaning_schedule.day', "Which day?")}</label>
                   <div className="grid grid-cols-4 gap-2">
                     {CLEANING_DAYS.map(d => (
                       <button key={d.value} onClick={() => setCleaningDay(d.value)}
-                        className={`py-2.5 rounded-xl font-bold text-xs border-2 transition-all active:scale-95 ${cleaningDay === d.value ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-card text-muted-foreground hover:border-primary/40"}`}>
-                        {d.label.slice(0, 3)}
+                        className={`py-2.5 rounded-xl font-bold text-xs border-2 transition-all active:scale-[0.95] ${cleaningDay === d.value ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-card text-muted-foreground hover:border-primary/40"}`}>
+                        {t(`common.days_short.${d.value}`, d.label.slice(0, 3))}
                       </button>
                     ))}
                   </div>
@@ -623,7 +660,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
               </>
             )}
 
-            <button className={btnPrimary} onClick={goNext}>Continue <ChevronRight size={16} className="inline ml-1" /></button>
+            <button className={btnPrimary} onClick={goNext}>{t('common.next', "Continue")} <ChevronRight size={16} className="inline ml-1" /></button>
           </div>
         )}
 
@@ -632,28 +669,28 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {step === 7 && (
           <div className="flex flex-col gap-5 animate-fade-up">
             <div className="flex justify-between items-start">
-              <button className={btnOutline} onClick={goBack}>← Back</button>
+              <button className={btnOutline} onClick={goBack}>← {t('common.back', "Back")}</button>
               <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
             </div>
             <div>
-              <p className="text-4xl mb-3">📋</p>
-              <h2 className="font-display font-black text-2xl text-foreground mb-1">Starting point</h2>
-              <p className="text-muted-foreground text-sm font-medium">Tell us who last bought each item and who's next. This is how we start the rotation.</p>
+              <p className="text-4xl mb-3">🏁</p>
+              <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.starting_point.title', "Starting point")}</h2>
+              <p className="text-muted-foreground text-sm font-medium">{t('setup.steps.starting_point.desc', "Tell us who last bought each item and who's next. This is how we start the rotation.")}</p>
             </div>
 
             {cleaningEnabled && (
               <div className="bg-card p-5 rounded-2xl border-2 border-border shadow-sm">
-                <h3 className="font-display font-bold text-lg text-foreground mb-4">🧹 Cleaning</h3>
-                {renderDropdown(`Who cleaned last? (${lastCleaningDate.label})`, "__cleaning", "last")}
-                {renderDropdown(`Who cleans next? (${nextCleaningDate.label})`, "__cleaning", "next")}
+                <h3 className="font-display font-bold text-lg text-foreground mb-4">🧹 {t('cleaning.title', "Cleaning")}</h3>
+                {renderDropdown(t('setup.steps.starting_point.last_cleaned', { date: lastCleaningDate.label, defaultValue: `Who cleaned last? (${lastCleaningDate.label})` }), "__cleaning", "last")}
+                {renderDropdown(t('setup.steps.starting_point.next_cleaner', { date: nextCleaningDate.label, defaultValue: `Who cleans next? (${nextCleaningDate.label})` }), "__cleaning", "next")}
               </div>
             )}
 
             {selectedSupplies.map(s => (
               <div key={s.id} className="bg-card p-5 rounded-2xl border-2 border-border shadow-sm">
                 <h3 className="font-display font-bold text-lg text-foreground mb-4">{s.icon} {s.label}</h3>
-                {renderDropdown(`Who bought ${s.label} last?`, s.id, "last")}
-                {renderDropdown(`Who should buy ${s.label} next?`, s.id, "next")}
+                {renderDropdown(t('setup.steps.starting_point.last_bought', { item: s.label, defaultValue: `Who bought ${s.label} last?` }), s.id, "last")}
+                {renderDropdown(t('setup.steps.starting_point.next_buyer', { item: s.label, defaultValue: `Who should buy ${s.label} next?` }), s.id, "next")}
               </div>
             ))}
 
@@ -662,7 +699,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
             )}
 
             <button className={btnPrimary} onClick={handleFinish} disabled={!v6 || isGenerating}>
-              {isGenerating ? "Setting up your NusaNest…" : "🎉 Generate House Code"}
+              {isGenerating ? t('setup.steps.starting_point.setting_up', "Setting up your NusaNest…") : t('setup.steps.starting_point.generate_btn', "🎉 Generate House Code")}
             </button>
           </div>
         )}
@@ -671,26 +708,26 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {step === 8 && (
           <div className="flex flex-col gap-4 text-center animate-fade-up">
             <div className="text-6xl" style={{ animation: "float 3s ease-in-out infinite" }}>🎉</div>
-            <h2 className="font-display font-black text-2xl text-primary">Your NusaNest is Ready!</h2>
-            <p className="text-muted-foreground text-sm font-medium leading-relaxed">Share this code with your housemates:</p>
+            <h2 className="font-display font-black text-2xl text-primary">{t('setup.steps.house_code.title', "Your NusaNest is Ready!")}</h2>
+            <p className="text-muted-foreground text-sm font-medium leading-relaxed">{t('setup.steps.house_code.desc', "Share this code with your housemates:")}</p>
             <div className="rounded-3xl p-7 bg-primary shadow-lg">
-              <p className="text-primary-foreground/60 text-xs font-bold tracking-widest uppercase mb-3">House Code</p>
+              <p className="text-primary-foreground/60 text-xs font-bold tracking-widest uppercase mb-3">{t('join.code_label', "House Code")}</p>
               <p className="font-display font-black text-5xl text-primary-foreground tracking-[0.22em] mb-2">{code}</p>
               <p className="text-primary-foreground/40 text-xs">{houseName}</p>
             </div>
             <button className="w-full py-3.5 rounded-xl bg-card text-foreground font-bold border border-border shadow-sm hover:bg-muted/30 transition-all" onClick={copyCode}>
-              {copied ? "✅ Copied!" : "📋 Copy code"}
+              {copied ? t('setup.steps.house_code.copied', "✅ Copied!") : t('setup.steps.house_code.copy_btn', "📋 Copy code")}
             </button>
             <div className="rounded-2xl bg-muted/40 border border-border p-4 text-left">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Your NusaNest summary</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">{t('setup.steps.house_code.summary_title', "Your NusaNest summary")}</p>
               <div className="flex flex-col gap-1.5 text-sm font-medium">
-                <p>🛒 <b>{selectedSupplies.length} shared items:</b> {selectedSupplies.map(s => `${s.icon} ${s.label}`).join(", ")}</p>
-                <p>🧹 <b>Cleaning:</b> {cleaningEnabled ? `${cleaningFrequency === "weekly" ? "Every week" : cleaningFrequency === "biweekly" ? "Every 2 weeks" : "Monthly"} on ${DAY_LABELS[cleaningDay]}s` : "Not scheduled"}</p>
-                {cleaningEnabled && <p>🔄 <b>Cleaning order:</b> {cleaningRotationOrder.join(" → ")}</p>}
-                <p>🔄 <b>Supplies order:</b> {suppliesRotationOrder.join(" → ")}</p>
+                <p>🛒 <b>{t('setup.steps.house_code.items_summary', { count: selectedSupplies.length, defaultValue: `${selectedSupplies.length} shared items:` })}</b> {selectedSupplies.map(s => `${s.icon} ${s.label}`).join(", ")}</p>
+                <p>🧹 <b>{t('setup.steps.house_code.cleaning_summary', "Cleaning:")}</b> {cleaningEnabled ? `${t(`setup.steps.house_code.cleaning_freq.${cleaningFrequency}`, cleaningFrequency)} ${t('setup.steps.house_code.cleaning_on', { day: CLEANING_DAYS.find(d => d.value === cleaningDay)?.label, defaultValue: `on ${CLEANING_DAYS.find(d => d.value === cleaningDay)?.label}s` })}` : t('setup.steps.house_code.cleaning_none', "Not scheduled")}</p>
+                {cleaningEnabled && <p>🔄 <b>{t('setup.steps.house_code.cleaning_order', "Cleaning order:")}</b> {cleaningRotationOrder.join(" → ")}</p>}
+                <p>🔄 <b>{t('setup.steps.house_code.supplies_order', "Supplies order:")}</b> {suppliesRotationOrder.join(" → ")}</p>
               </div>
             </div>
-            <button className={btnPrimary} onClick={() => setStep(9)}>Who are you? →</button>
+            <button className={btnPrimary} onClick={() => setStep(9)}>{t('setup.steps.house_code.who_are_you', "Who are you? →")}</button>
           </div>
         )}
 
@@ -699,8 +736,8 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
           <div className="flex flex-col gap-3 animate-fade-up">
             <div className="mb-1">
               <p className="text-4xl mb-3">👋</p>
-              <h2 className="font-display font-black text-2xl text-primary mb-1">Who are you?</h2>
-              <p className="text-muted-foreground text-sm font-medium">Select your name to enter your NusaNest:</p>
+              <h2 className="font-display font-black text-2xl text-primary mb-1">{t('setup.steps.who_are_you.title', "Who are you?")}</h2>
+              <p className="text-muted-foreground text-sm font-medium">{t('setup.steps.who_are_you.desc', "Select your name to enter your NusaNest:")}</p>
             </div>
             {realMembersRef.current.map((m, i) => (
               <button key={m.id}
@@ -710,11 +747,88 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
                 <Avatar name={m.name} size={50} radius={16} fontSize={20} />
                 <div className="flex-1">
                   <div className="text-lg text-foreground">{m.name}</div>
-                  <div className="font-normal text-xs text-muted-foreground mt-0.5">Joined {fmtDate(m.created_at, { month: "short", day: "numeric" })}</div>
+                  <div className="font-normal text-xs text-muted-foreground mt-0.5">{t('setup.steps.who_are_you.joined_on', { date: new Date(m.created_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric" }), defaultValue: `Joined ${new Date(m.created_at).toLocaleDateString()}` })}</div>
                 </div>
                 {chosen === m.id && <span className="text-primary text-xl">✓</span>}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* ── STEP 10 — Profile setup (NEW) ── */}
+        {step === 10 && profile && (
+          <div className="flex flex-col gap-6 animate-fade-up">
+            <div className="flex justify-between items-start">
+              <button className={btnOutline} onClick={() => setStep(9)}>← {t('common.back', "Back")}</button>
+              <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
+            </div>
+            <div className="text-center">
+              <p className="text-4xl mb-3">🎨</p>
+              <h2 className="font-display font-black text-2xl text-primary mb-1">{t('setup.steps.profile_setup.title', "Personalise your profile")}</h2>
+              <p className="text-muted-foreground text-sm font-medium">{t('setup.steps.profile_setup.desc', "Optional — you can always change this later")}</p>
+            </div>
+
+            <div className="flex flex-col items-center gap-6 py-4">
+              <Avatar 
+                member={realMembersRef.current.find(m => m.id === chosen)}
+                profile={profile}
+                size={100}
+                radius={32}
+                fontSize={28}
+              />
+              
+              <div className="w-full space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-2 text-center">{t('setup.steps.profile_setup.nickname_label', "Your Display Name")}</label>
+                  <input 
+                    type="text" 
+                    className={`${inputClass} text-center`}
+                    value={profile.nickname}
+                    onChange={(e) => setProfile({ ...profile, nickname: e.target.value.slice(0, 15) })}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-3 text-center">{t('setup.steps.profile_setup.country_label', "Select your country flag")}</label>
+                  <div className="flex gap-2 overflow-x-auto pb-2 justify-center no-scrollbar">
+                    {COUNTRIES.filter(c => ["ID", "AR", "EG", "PK", "BD", "YE", "SD", "PS", "MY", "JO"].includes(c.code)).map(c => (
+                      <button
+                        key={c.code}
+                        onClick={() => setProfile({ ...profile, country_code: c.code })}
+                        className={`text-2xl p-2 rounded-xl transition-all border-2 ${profile.country_code === c.code ? "border-primary bg-primary/5 scale-110" : "border-transparent"}`}
+                      >
+                        {c.flag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-3 text-center">{t('profile.avatar_color', "Pick a color")}</label>
+                  <div className="flex gap-2 justify-center">
+                    {AV_COLORS.slice(0, 7).map(color => (
+                      <button
+                        key={color}
+                        onClick={() => setProfile({ ...profile, avatar_color: color })}
+                        className={`w-8 h-8 rounded-full transition-all border-2 ${profile.avatar_color === color ? "border-foreground scale-110" : "border-transparent"}`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button className={btnPrimary} onClick={finishAndEnter} disabled={isGenerating}>
+              {isGenerating ? t('common.saving', "Saving...") : t('setup.finish', "Save & Enter NusaNest →")}
+            </button>
+            <button 
+              className="text-muted-foreground text-sm font-bold uppercase tracking-widest hover:text-foreground"
+              onClick={() => buildAndEnter(realMembersRef.current.find(m => m.id === chosen)!)}
+              disabled={isGenerating}
+            >
+              {t('setup.skip_now', "Skip for now")}
+            </button>
           </div>
         )}
 

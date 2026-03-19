@@ -1,6 +1,8 @@
-import { Home } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
-const SplashScreen = () => (
+const SplashScreen = () => {
+  const { t } = useTranslation();
+  return (
   <div className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-background">
     <div className="mb-5 animate-float">
       <img 
@@ -13,21 +15,23 @@ const SplashScreen = () => (
       <span className="text-6xl">N</span>usaNest
     </h1>
     <p className="text-muted-foreground text-lg font-medium mb-1 animate-fade-up" style={{ animationDelay: ".2s" }}>
-      Student Living, Simplified — Universitas Nusa Putra
+      {t('landing.subtitle', "Student Living, Simplified")} — {t('landing.university', "Universitas Nusa Putra")}
     </p>
-    <div className="flex gap-2 justify-center mt-7 animate-fade-in" style={{ animationDelay: ".7s" }}>
+    <div className="flex gap-3 justify-center mt-10 animate-fade-in" style={{ animationDelay: ".8s" }}>
       {[0, 1, 2].map(i => (
         <div
           key={i}
-          className="w-2.5 h-2.5 rounded-full"
+          className="w-3 h-3 rounded-full shadow-sm"
           style={{
-            background: i === 1 ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.2)",
-            animation: `pulse-dot ${1 + i * 0.3}s infinite`,
+            backgroundColor: "#770042",
+            opacity: i === 1 ? 1 : 0.4,
+            animation: `pulse-dot ${1.2 + i * 0.4}s infinite`,
           }}
         />
       ))}
     </div>
   </div>
-);
+    );
+};
 
 export default SplashScreen;

@@ -1,66 +1,12 @@
-import { useState, useEffect, useRef } from "react";
-import { Home, Sparkles, DoorOpen, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useEffect } from "react";
+import { DoorOpen, ArrowRight, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface LandingScreenProps {
   onSetup: () => void;
   onJoin:  () => void;
 }
 
-const HOW_IT_WORKS = [
-  {
-    emoji: "🏠",
-    title: "Create your house",
-    desc:  "One person sets up the house in under 2 minutes — name it, add housemates, and choose what you share together.",
-  },
-  {
-    emoji: "🔑",
-    title: "Share the 6-digit code",
-    desc:  "A unique code is generated for your house. Housemates enter it once to join. No accounts, no passwords.",
-  },
-  {
-    emoji: "🧹",
-    title: "Cleaning rotates automatically",
-    desc:  "HouseHub tracks whose turn it is to clean. After someone logs their clean, the schedule moves to the next person.",
-  },
-  {
-    emoji: "🛒",
-    title: "Supplies rotate fairly",
-    desc:  "Each shared item has its own rotation. When someone buys it, the next person's name appears automatically.",
-  },
-  {
-    emoji: "📋",
-    title: "Full history for everyone",
-    desc:  "Every clean and purchase is recorded. Anyone can check the History tab to see their own or a housemate's record.",
-  },
-  {
-    emoji: "🔄",
-    title: "Always in sync",
-    desc:  "The dashboard updates in real time across all devices. No refresh needed.",
-  },
-];
-
-const FAQS = [
-  {
-    q: "Do I need to create an account?",
-    a: "No. NusaNest uses a 6-digit house code instead of accounts. Enter the code your housemate shares and you're in instantly.",
-  },
-  {
-    q: "What if I log something by mistake?",
-    a: "Every action has an Undo button that appears for 5 seconds after logging. Tap it to reverse the action completely.",
-  },
-  {
-    q: "Can we add our own supply items?",
-    a: "Yes — during setup you can add any custom item with your own emoji and name. NusaNest adapts to your house's needs.",
-  },
-  {
-    q: "What if someone moves out?",
-    a: "The remaining members continue their rotation. New members can join anytime using the same house code.",
-  },
-  {
-    q: "Is our data private?",
-    a: "Your house is only accessible to people who know your 6-digit code. Without it, nobody can see your house.",
-  },
-];
 
 const useScrollReveal = () => {
   useEffect(() => {
@@ -86,11 +32,19 @@ const useScrollReveal = () => {
 };
 
 const LandingScreen = ({ onSetup, onJoin }: LandingScreenProps) => {
+  const { t } = useTranslation();
   const [openFaq,      setOpenFaq]      = useState<number | null>(null);
   const [showAllSteps, setShowAllSteps] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [showInstall,   setShowInstall]   = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+
+  const features = t('landing.features', { returnObjects: true }) as any[];
+  const faqs = t('landing.faqs', { returnObjects: true }) as any[];
+  const emojis = ["🏠", "🔑", "🧹", "🛒", "📋", "🔄"];
+  
+  const HOW_IT_WORKS = features.map((f, i) => ({ ...f, emoji: emojis[i] || "✨" }));
+  const FAQS = faqs;
 
   useScrollReveal();
 
@@ -149,8 +103,8 @@ const LandingScreen = ({ onSetup, onJoin }: LandingScreenProps) => {
           {/* Subtitle */}
           <p className="text-foreground/80 font-medium text-[19px] tracking-wide"
             style={{ animation: "entrance 0.6s cubic-bezier(0.34,1.3,0.64,1) 100ms both" }}>
-            Student Living, Simplified
-            <span className="block text-sm font-bold text-secondary uppercase tracking-[0.2em] mt-2">Universitas Nusa Putra</span>
+            {t('landing.subtitle', "Student Living, Simplified")}
+            <span className="block text-sm font-bold text-secondary uppercase tracking-[0.2em] mt-2">{t('landing.university', "Universitas Nusa Putra")}</span>
           </p>
         </div>
       </div>
@@ -160,7 +114,7 @@ const LandingScreen = ({ onSetup, onJoin }: LandingScreenProps) => {
 
         <p className="font-display font-bold text-2xl mb-6 text-foreground text-center"
           style={{ animation: "entrance 0.6s cubic-bezier(0.34,1.3,0.64,1) 200ms both" }}>
-          What would you like to do?
+          {t('landing.cta_question', "What would you like to do?")}
         </p>
 
         <div className="flex flex-col gap-4 mb-auto">
@@ -174,8 +128,8 @@ const LandingScreen = ({ onSetup, onJoin }: LandingScreenProps) => {
                 <Sparkles size={26} strokeWidth={2.5} />
               </div>
               <div className="flex-1">
-                <div className="text-lg font-bold text-foreground mb-1 group-hover:text-primary transition-colors">Set up a new house</div>
-                <div className="font-medium text-[15px] text-muted-foreground">Create your house and invite housemates</div>
+                <div className="text-lg font-bold text-foreground mb-1 group-hover:text-primary transition-colors">{t('landing.setup_house_title', "Set up a new house")}</div>
+                <div className="font-medium text-[15px] text-muted-foreground">{t('landing.setup_house_desc', "Create your house and invite housemates")}</div>
               </div>
               <ArrowRight className="text-muted-foreground/40 transition-all duration-300 group-hover:text-primary group-hover:translate-x-1.5" size={24} />
             </button>
@@ -190,8 +144,8 @@ const LandingScreen = ({ onSetup, onJoin }: LandingScreenProps) => {
                 <DoorOpen size={26} strokeWidth={2.5} />
               </div>
               <div className="flex-1">
-                <div className="text-lg font-bold text-foreground mb-1 group-hover:text-primary transition-colors">Join existing house</div>
-                <div className="font-medium text-[15px] text-muted-foreground">Enter your 6-digit house code</div>
+                <div className="text-lg font-bold text-foreground mb-1 group-hover:text-primary transition-colors">{t('landing.join_house_title', "Join existing house")}</div>
+                <div className="font-medium text-[15px] text-muted-foreground">{t('landing.join_house_desc', "Enter your 6-digit house code")}</div>
               </div>
               <ArrowRight className="text-muted-foreground/40 transition-all duration-300 group-hover:text-primary group-hover:translate-x-1.5" size={24} />
             </button>
@@ -202,10 +156,10 @@ const LandingScreen = ({ onSetup, onJoin }: LandingScreenProps) => {
         <div className="mt-14">
           <div className="text-center mb-6">
             <p className="text-[15px] font-semibold text-primary leading-relaxed mb-1">
-              New to NusaNest?
+              {t('landing.how_it_works_title', "New to NusaNest?")}
             </p>
             <p className="text-sm font-bold text-secondary uppercase tracking-widest">
-              Here's how it works
+              {t('landing.how_it_works_subtitle', "Here's how it works")}
             </p>
           </div>
 
@@ -232,8 +186,8 @@ const LandingScreen = ({ onSetup, onJoin }: LandingScreenProps) => {
             onClick={() => setShowAllSteps(v => !v)}
           >
             {showAllSteps
-              ? <><ChevronUp size={14} /> Show less</>
-              : <><ChevronDown size={14} /> See all {HOW_IT_WORKS.length} features</>
+              ? <><ChevronUp size={14} /> {t('landing.show_less', "Show less")}</>
+              : <><ChevronDown size={14} /> {t('landing.show_more', { count: features.length, defaultValue: `See all ${features.length} features` })}</>
             }
           </button>
         </div>
@@ -242,10 +196,10 @@ const LandingScreen = ({ onSetup, onJoin }: LandingScreenProps) => {
         <div className="mt-12">
           <div className="text-center mb-6">
             <p className="text-[15px] font-semibold text-primary leading-relaxed mb-1">
-              Got questions?
+              {t('landing.faq_title', "Got questions?")}
             </p>
             <p className="text-sm font-bold text-secondary uppercase tracking-widest">
-              Common answers
+              {t('landing.faq_subtitle', "Common answers")}
             </p>
           </div>
 
@@ -306,10 +260,10 @@ const LandingScreen = ({ onSetup, onJoin }: LandingScreenProps) => {
                 📲
               </div>
               <div className="flex-1 text-left">
-                <p className="font-bold text-sm text-foreground mb-0.5">Install NusaNest</p>
-                <p className="text-xs text-muted-foreground font-medium">Add to your home screen for the best experience</p>
+                <p className="font-bold text-sm text-foreground mb-0.5">{t('landing.install.title', "Install NusaNest")}</p>
+                <p className="text-xs text-muted-foreground font-medium">{t('landing.install.desc', "Add to your home screen for the best experience")}</p>
               </div>
-              <span className="text-primary font-bold text-sm">Install</span>
+              <span className="text-primary font-bold text-sm">{t('landing.install.btn', "Install")}</span>
             </button>
           </div>
         )}
@@ -318,16 +272,16 @@ const LandingScreen = ({ onSetup, onJoin }: LandingScreenProps) => {
         <div className="mt-12 pt-8 border-t border-border/40 text-center reveal-card">
 
           <p className="text-[15px] font-semibold text-primary leading-relaxed mb-1">
-            NusaNest keeps shared homes organized and fair.
+            {t('landing.footer.main', "NusaNest keeps shared homes organized and fair.")}
           </p>
           <p className="text-[14px] font-medium text-muted-foreground leading-relaxed mb-4">
-            Cleaning schedules and supply responsibilities rotate clearly so everyone always knows whose turn it is.
+            {t('landing.footer.desc', "Cleaning schedules and supply responsibilities rotate clearly so everyone always knows whose turn it is.")}
           </p>
           <p className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-6">
-            © 2025 NusaNest for Universitas Nusa Putra — International Student Living
+            {t('landing.footer.copyright', "© 2025 NusaNest for Universitas Nusa Putra — International Student Living")}
           </p>
           <p className="text-sm font-bold text-secondary uppercase tracking-widest">
-            Simple <span className="inline-block" style={{ animation: "soft-pulse 2s ease-in-out infinite" }}>·</span> Fair <span className="inline-block" style={{ animation: "soft-pulse 2s ease-in-out infinite" }}>·</span> Organized living.
+            {t('landing.footer.tagline', "Simple · Fair · Organized living.")}
           </p>
         </div>
 
