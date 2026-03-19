@@ -639,19 +639,8 @@ const Dashboard = ({
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowProfile(true)}
-                className="p-0.5 rounded-2xl border-2 border-border/50 hover:border-primary transition-all active:scale-90"
-              >
-                <Avatar 
-                  member={user} 
-                  profile={memberProfiles[user.id]} 
-                  size={42} 
-                  radius={14} 
-                  fontSize={16} 
-                />
-              </button>
-              <button
                 onClick={() => setNotifDrawerOpen(true)}
+
                 className="p-2.5 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary hover:border-primary/30 transition-all active:scale-90 relative"
               >
                 <Bell size={20} />
