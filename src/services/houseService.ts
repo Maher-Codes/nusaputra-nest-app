@@ -14,7 +14,13 @@ import {
   update,
   remove,
 } from "firebase/database";
-import { genCode, Member, CleanRecord, Purchase, SupplyResponsibility } from "@/lib/househub";
+import { genCode, Member, CleanRecord, Purchase, SupplyResponsibility, Report, ReportNotification, TravelMode, TravelIOU, TopContributor } from "@/lib/househub";
+
+function generateReferenceNumber(): string {
+  const year = new Date().getFullYear();
+  const random = Math.floor(Math.random() * 9000) + 1000;
+  return `NNN-${year}-${random}`;
+}
 
 export const houseService = {
 
@@ -106,6 +112,33 @@ export const houseService = {
     
     const data = snapshot.val();
     return Object.values(data) as Member[];
+  },
+
+  // ----------------------------------------------------------
+  // MEMBER PROFILES
+  // ----------------------------------------------------------
+
+  /** Fetches a specific member's profile. */
+  async getMemberProfile(houseId: string, memberId: string): Promise<any | null> {
+    const profileRef = ref(db, `member_profiles/${houseId}/${memberId}`);
+    const snapshot = await get(profileRef);
+    return snapshot.exists() ? snapshot.val() : null;
+  },
+
+  /** Saves a member's profile. */
+  async saveMemberProfile(houseId: string, profile: any): Promise<void> {
+    const profileRef = ref(db, `member_profiles/${houseId}/${profile.id}`);
+    await set(profileRef, {
+      ...profile,
+      updated_at: new Date().toISOString()
+    });
+  },
+
+  /** Fetches all member profiles for a house. */
+  async getAllMemberProfiles(houseId: string): Promise<Record<string, any>> {
+    const profilesRef = ref(db, `member_profiles/${houseId}`);
+    const snapshot = await get(profilesRef);
+    return snapshot.exists() ? snapshot.val() : {};
   },
 
   // ----------------------------------------------------------
@@ -321,5 +354,379 @@ export const houseService = {
     const updated = currentSupplies.filter(s => s.id !== itemId);
     const settingsRef = ref(db, `house_settings/${houseId}`);
     await update(settingsRef, { supplies: updated });
+  },
+
+  // ----------------------------------------------------------
+  // REPORTS & NOTIFICATIONS
+  // ----------------------------------------------------------
+
+  /** Submits a new report and creates initial notifications. */
+  async submitReport(
+    houseId: string, 
+    report: Omit<Report, "id" | "created_at" | "reference_number">
+  ): Promise<string> {
+    const reportsRef = ref(db, `reports/${houseId}`);
+    const newReportRef = push(reportsRef);
+    const reportId = newReportRef.key!;
+    const refNum = generateReferenceNumber();
+    const now = new Date().toISOString();
+
+    const reportData: Report = {
+      ...report,
+      id: reportId,
+      reference_number: refNum,
+      created_at: now,
+      status: report.status || "pending",
+      university_response: report.university_response || "",
+    };
+
+    // Convert co_signers and co_signer_requests arrays to objects for Firebase
+    const reportToSave = {
+      ...reportData,
+      co_signers: report.co_signers.reduce((acc, id) => ({ ...acc, [id]: true }), {}),
+      co_signer_requests: report.co_signer_requests.reduce((acc, id) => ({ ...acc, [id]: true }), {}),
+    };
+
+    await set(newReportRef, reportToSave);
+
+    // 1. Notification for reported person
+    await this.createNotification({
+      house_id: houseId,
+      member_id: report.reported_member_id,
+      type: "reported_notice",
+      report_id: reportId,
+      message: "A concern has been raised in your house regarding shared responsibilities. Please ensure you are fulfilling your duties faithfully.",
+      read: false,
+    });
+
+    // 2. Notification for reporter
+    await this.createNotification({
+      house_id: houseId,
+      member_id: report.reporter_member_id,
+      type: "report_confirmed",
+      report_id: reportId,
+      message: `Your report has been submitted. Reference: ${refNum}`,
+      read: false,
+    });
+
+    // 3. Notifications for co-signers
+    for (const memberId of report.co_signer_requests) {
+      await this.createNotification({
+        house_id: houseId,
+        member_id: memberId,
+        type: "co_sign_request",
+        report_id: reportId,
+        message: "A housemate has filed a report and is asking if you share the same concern. You can choose to support or decline — this is completely optional.",
+        read: false,
+      });
+    }
+
+    return refNum;
+  },
+
+  /** Creates a single notification row. */
+  async createNotification(notification: Omit<ReportNotification, "id" | "created_at">): Promise<void> {
+    const notifsRef = ref(db, `report_notifications/${notification.house_id}`);
+    const newNotifRef = push(notifsRef);
+    await set(newNotifRef, {
+      ...notification,
+      id: newNotifRef.key,
+      created_at: new Date().toISOString(),
+    });
+  },
+
+  /** Fetches all reports for a house (or all reports if houseId is empty). */
+  async getReportsForHouse(houseId: string): Promise<Report[]> {
+    const reportsRef = houseId ? ref(db, `reports/${houseId}`) : ref(db, "reports");
+    const snapshot = await get(reportsRef);
+    if (!snapshot.exists()) return [];
+    
+    const data = snapshot.val();
+    const reports: Report[] = [];
+
+    if (houseId) {
+      // Single house data
+      Object.values(data).forEach((r: any) => {
+        reports.push({
+          ...r,
+          co_signers: r.co_signers ? Object.keys(r.co_signers) : [],
+          co_signer_requests: r.co_signer_requests ? Object.keys(r.co_signer_requests) : [],
+        } as Report);
+      });
+    } else {
+      // Global data (root 'reports' node)
+      Object.keys(data).forEach(hId => {
+        const houseReports = data[hId];
+        Object.values(houseReports).forEach((r: any) => {
+          reports.push({
+            ...r,
+            co_signers: r.co_signers ? Object.keys(r.co_signers) : [],
+            co_signer_requests: r.co_signer_requests ? Object.keys(r.co_signer_requests) : [],
+          } as Report);
+        });
+      });
+    }
+    
+    return reports.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  },
+
+  /** Fetches notifications for a specific member. */
+  async getNotificationsForMember(houseId: string, memberId: string): Promise<ReportNotification[]> {
+    const notifsRef = ref(db, `report_notifications/${houseId}`);
+    const snapshot = await get(notifsRef);
+    if (!snapshot.exists()) return [];
+
+    const allNotifs = Object.values(snapshot.val()) as ReportNotification[];
+    return allNotifs.filter(n => n.member_id === memberId).sort((a, b) => b.created_at.localeCompare(a.created_at));
+  },
+
+  /** Marks a notification as read. */
+  async markNotificationRead(houseId: string, notificationId: string): Promise<void> {
+    const notifRef = ref(db, `report_notifications/${houseId}/${notificationId}`);
+    await update(notifRef, { read: true });
+  },
+
+  /** Adds a co-signer to a report. */
+  async addCoSigner(houseId: string, reportId: string, memberId: string): Promise<void> {
+    const coSignerRef = ref(db, `reports/${houseId}/${reportId}/co_signers/${memberId}`);
+    const requestRef = ref(db, `reports/${houseId}/${reportId}/co_signer_requests/${memberId}`);
+    
+    await set(coSignerRef, true);
+    await remove(requestRef);
+  },
+
+  /** Declines a co-sign request. */
+  async declineCoSign(houseId: string, reportId: string, memberId: string): Promise<void> {
+    const requestRef = ref(db, `reports/${houseId}/${reportId}/co_signer_requests/${memberId}`);
+    await remove(requestRef);
+  },
+
+  /** Updates report status and optionally sends notification. */
+  async updateReportStatus(
+    houseId: string, 
+    reportId: string, 
+    status: Report["status"], 
+    response?: string
+  ): Promise<void> {
+    const reportRef = ref(db, `reports/${houseId}/${reportId}`);
+    const updates: any = { status };
+    if (response !== undefined) updates.university_response = response;
+    
+    await update(reportRef, updates);
+
+    if (response) {
+      const snapshot = await get(reportRef);
+      if (snapshot.exists()) {
+        const report = snapshot.val();
+        const msg = `The university has reviewed your house report (Ref: ${report.reference_number}) and has responded. Please check in with your student affairs office if needed.`;
+        
+        // Notify reporter
+        await this.createNotification({
+          house_id: houseId,
+          member_id: report.reporter_member_id,
+          type: "university_response",
+          report_id: reportId,
+          message: msg,
+          read: false,
+        });
+
+        // Notify reported person
+        await this.createNotification({
+          house_id: houseId,
+          member_id: report.reported_member_id,
+          type: "university_response",
+          report_id: reportId,
+          message: msg,
+          read: false,
+        });
+      }
+    }
+  },
+
+  // ----------------------------------------------------------
+  // TRAVEL MODE
+  // ----------------------------------------------------------
+
+  /** Activate Travel Mode for a member. */
+  async activateTravelMode(houseId: string, travelData: Omit<TravelMode, "id" | "created_at">): Promise<string> {
+    const travelRef = ref(db, `travel_modes/${houseId}`);
+    const newTravelRef = push(travelRef);
+    const travelId = newTravelRef.key!;
+    const now = new Date().toISOString();
+
+    const data: TravelMode = {
+      ...travelData,
+      id: travelId,
+      created_at: now,
+    };
+
+    await set(newTravelRef, data);
+
+    // Automation: Exclude from cleaning
+    await this.updateExcludedMembers(houseId, "cleaning", [
+      ...(await this.getExcludedMembers(houseId, "cleaning")),
+      travelData.member_id
+    ]);
+
+    // Create IOUs for "cover" decisions
+    const depDate = new Date(travelData.departure_date);
+    const retDate = new Date(travelData.return_date);
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const period = `${depDate.getDate()} ${monthNames[depDate.getMonth()]} – ${retDate.getDate()} ${monthNames[retDate.getMonth()]}`;
+
+    const settings = await this.getHouseSettings(houseId);
+    const supplies = settings?.supplies || [];
+
+    // Handover logic: If traveller is currently "next", advance or reassign
+    const resps = await this.getSupplyResponsibilities(houseId);
+    for (const resp of resps) {
+      if (resp.next_member_id === travelData.member_id) {
+        const supply = supplies.find((s: any) => s.label === resp.item_name);
+        if (!supply) continue;
+        
+        const decision = travelData.supply_decisions[supply.id] || "skip";
+        if (decision === "skip") {
+          // Find next available member in order
+          const members = await this.getMembers(houseId);
+          const settings = await this.getHouseSettings(houseId);
+          const order = settings?.supplies_rotation_order || members.map((m: any) => m.id);
+          const excluded = settings?.excluded_members?.[resp.item_name] || [];
+          // Also skip the traveller + any other active travellers
+          const activeTravelModes = await this.getActiveTravelModes(houseId);
+          const currentlyTraveling = activeTravelModes.map(t => t.member_id);
+          const allSkip = Array.from(new Set([...excluded, ...currentlyTraveling, travelData.member_id]));
+
+          const activeOrder = order.filter((id: string) => !allSkip.includes(id));
+          if (activeOrder.length > 0) {
+            const currentIdx = order.indexOf(travelData.member_id);
+            // This is simplified; ideally we find the next in activeOrder that follows the traveler in order
+            // For now, just take the first one in activeOrder that is NOT the traveler
+            const nextId = activeOrder[0]; 
+            await this.updateNextBuyer(houseId, resp.item_name, nextId);
+          }
+        } else if (decision === "cover") {
+          const coverMemberId = travelData.cover_assignments[supply.id];
+          if (coverMemberId) {
+            await this.updateNextBuyer(houseId, resp.item_name, coverMemberId);
+          }
+        }
+      }
+    }
+
+    for (const supplyId of Object.keys(travelData.supply_decisions)) {
+      if (travelData.supply_decisions[supplyId] === "cover") {
+        const coverMemberId = travelData.cover_assignments[supplyId];
+        const supply = supplies.find((s: any) => s.id === supplyId);
+        if (coverMemberId && supply) {
+          await this.createTravelIOU(houseId, {
+            house_id: houseId,
+            traveler_member_id: travelData.member_id,
+            cover_member_id: coverMemberId,
+            supply_item_label: supply.label,
+            supply_item_icon: supply.icon,
+            travel_id: travelId,
+            period,
+            settled: false,
+            settled_at: null,
+          });
+
+          // Notify cover person
+          const traveler = (await this.getMembers(houseId)).find(m => m.id === travelData.member_id);
+          await this.createNotification({
+            house_id: houseId,
+            member_id: coverMemberId,
+            type: "university_response", // Reusing for travel notice
+            report_id: "travel-" + travelId,
+            message: `${traveler?.name || "A housemate"} is travelling ${period}. You've been asked to cover ${supply.icon} ${supply.label} during this time. They'll settle up when they return. 🤝`,
+            read: false,
+          });
+        }
+      }
+    }
+
+    return travelId;
+  },
+
+
+  /** Get current excluded members array for a key. */
+  async getExcludedMembers(houseId: string, key: string): Promise<string[]> {
+    const settings = await this.getHouseSettings(houseId);
+    return settings?.excluded_members?.[key] || [];
+  },
+
+  /** Get all active travel modes for a house. */
+  async getActiveTravelModes(houseId: string): Promise<TravelMode[]> {
+    const travelRef = ref(db, `travel_modes/${houseId}`);
+    const snapshot = await get(travelRef);
+    if (!snapshot.exists()) return [];
+    const data = snapshot.val();
+    return (Object.values(data) as TravelMode[]).filter(t => t.status === "active");
+  },
+
+  /** End Travel Mode (mark as returned). */
+  async endTravelMode(houseId: string, travelId: string): Promise<void> {
+    const travelRef = ref(db, `travel_modes/${houseId}/${travelId}`);
+    const snapshot = await get(travelRef);
+    if (!snapshot.exists()) return;
+    const travelData = snapshot.val() as TravelMode;
+
+    await update(travelRef, { status: "returned" });
+
+    // Automation: Remove from cleaning exclusion
+    const excluded = await this.getExcludedMembers(houseId, "cleaning");
+    await this.updateExcludedMembers(houseId, "cleaning", excluded.filter(id => id !== travelData.member_id));
+  },
+
+  /** Update return date. */
+  async updateReturnDate(houseId: string, travelId: string, newReturnDate: string): Promise<void> {
+    const travelRef = ref(db, `travel_modes/${houseId}/${travelId}`);
+    await update(travelRef, { return_date: newReturnDate });
+  },
+
+  /** Get unsettle IOUs for a house. */
+  async getUnsettledIOUs(houseId: string): Promise<TravelIOU[]> {
+    const iousRef = ref(db, `travel_ious/${houseId}`);
+    const snapshot = await get(iousRef);
+    if (!snapshot.exists()) return [];
+    const data = snapshot.val();
+    return (Object.values(data) as TravelIOU[]).filter(iou => !iou.settled);
+  },
+
+  /** Mark an IOU as settled. */
+  async settleIOU(houseId: string, iouId: string): Promise<void> {
+    const iouRef = ref(db, `travel_ious/${houseId}/${iouId}`);
+    await update(iouRef, { 
+      settled: true, 
+      settled_at: new Date().toISOString() 
+    });
+  },
+
+  /** Create a travel IOU. */
+  async createTravelIOU(houseId: string, iou: Omit<TravelIOU, "id" | "created_at">): Promise<void> {
+    const iousRef = ref(db, `travel_ious/${houseId}`);
+    const newIOURef = push(iousRef);
+    await set(newIOURef, {
+      ...iou,
+      id: newIOURef.key,
+      created_at: new Date().toISOString(),
+    });
+  },
+
+  // ----------------------------------------------------------
+  // TOP CONTRIBUTOR / REPORTS
+  // ----------------------------------------------------------
+
+  /** Save top contributor for a month. */
+  async saveTopContributor(houseId: string, contributor: TopContributor): Promise<void> {
+    const topRef = ref(db, `house_settings/${houseId}/top_contributor`);
+    await set(topRef, contributor);
+  },
+
+  /** Get current top contributor. */
+  async getTopContributor(houseId: string): Promise<TopContributor | null> {
+    const topRef = ref(db, `house_settings/${houseId}/top_contributor`);
+    const snapshot = await get(topRef);
+    if (!snapshot.exists()) return null;
+    return snapshot.val() as TopContributor;
   },
 };
