@@ -1,0 +1,465 @@
+{
+  "common": {
+    "save": "Simpan",
+    "cancel": "Batal",
+    "back": "Kembali",
+    "next": "Lanjut",
+    "skip": "Lewati",
+    "done": "Selesai",
+    "loading": "Memuat...",
+    "confirm": "Konfirmasi",
+    "back_panel": "Tutup panel",
+    "back_to_home": "Kembali ke Beranda",
+    "back_to_landing": "Kembali ke Awal",
+    "you": "Anda",
+    "yesterday": "Kemarin",
+    "today": "Hari ini",
+    "tomorrow": "Besok",
+    "until": "Sampai",
+    "success": "Berhasil",
+    "error": "Kesalahan",
+    "settle": "Selesaikan",
+    "i_am_back": "Saya kembali",
+    "saving": "Menyimpan...",
+    "close": "Tutup",
+    "undo": "Batal"
+  },
+  "landing": {
+    "title": "Selamat Datang di NusaNest",
+    "subtitle": "Hunian Mahasiswa, Jadi Lebih Mudah",
+    "university": "Universitas Nusa Putra",
+    "cta_question": "Apa yang ingin Anda lakukan?",
+    "setup_house_title": "Atur Rumah Baru",
+    "setup_house_desc": "Buat rumah Anda dan undang teman serumah",
+    "join_house_title": "Masuk ke Rumah Lain",
+    "join_house_desc": "Masukkan 6-digit kode rumah",
+    "how_it_works_title": "Baru di NusaNest?",
+    "how_it_works_subtitle": "Begini cara kerjanya",
+    "features": [
+      { "title": "Buat Rumah Anda", "desc": "Satu orang mengatur rumah dalam kurang dari 2 menit — beri nama, tambah teman, dan pilih apa yang dibagi." },
+      { "title": "Bagikan Kode", "desc": "Kode unik dibuat untuk rumah Anda. Teman memasukkannya sekali untuk bergabung. Tanpa akun, tanpa sandi." },
+      { "title": "Piket Bergilir", "desc": "NusaNest melacak giliran siapa yang piket. Setelah piket dicatat, jadwal berlanjut ke orang berikutnya." },
+      { "title": "Kebutuhan Adil", "desc": "Setiap barang punya giliran sendiri. Saat seseorang membelinya, nama berikutnya muncul otomatis." },
+      { "title": "Riwayat Lengkap", "desc": "Setiap piket dan pembelian dicatat. Siapa pun bisa cek riwayat untuk melihat catatan mereka." },
+      { "title": "Selalu Sinkron", "desc": "Dashboard diperbarui secara real-time di semua perangkat. Tidak perlu refresh halaman." }
+    ],
+    "show_more": "Lihat semua fitur ({{count}})",
+    "show_less": "Lihat lebih sedikit",
+    "faq_title": "Punya Pertanyaan?",
+    "faq_subtitle": "Jawaban umum",
+    "faqs": [
+      { "q": "Apakah saya perlu buat akun?", "a": "Tidak. NusaNest menggunakan kode rumah sebagai ganti akun. Masukkan kode teman Anda dan Anda langsung masuk." },
+      { "q": "Bagaimana jika saya salah catat?", "a": "Setiap tindakan punya tombol 'Batal' yang muncul selama 5 detik. Tekan untuk membatalkan sepenuhnya." },
+      { "q": "Bisa tambah barang khusus?", "a": "Ya — saat pengaturan Anda bisa menambah barang apa pun dengan emoji dan namanya sendiri." },
+      { "q": "Bagaimana jika ada yang pindah?", "a": "Anggota lain tetap lanjut gilirannya. Anggota baru bisa bergabung kapan saja dengan kode rumah." },
+      { "q": "Apakah data kami pribadi?", "a": "Rumah Anda hanya bisa diakses oleh mereka yang tahu kodenya. Tanpa kode, tidak ada yang bisa melihat." }
+    ],
+    "install": {
+      "title": "Pasang NusaNest",
+      "desc": "Tambahkan ke layar utama untuk pengalaman terbaik",
+      "btn": "Pasang"
+    },
+    "footer": {
+      "main": "NusaNest menjaga teman serumah tetap teratur dan adil.",
+      "desc": "Jadwal piket dan tanggung jawab kebutuhan bergilir dengan jelas agar semua tahu giliran siapa sekarang.",
+      "copyright": "© 2025 NusaNest untuk Universitas Nusa Putra — Kehidupan Mahasiswa Internasional",
+      "tagline": "Mudah · Adil · Hidup Teratur."
+    }
+  },
+  "join": {
+    "title": "Masuk ke Rumah",
+    "subtitle": "Masukkan 6-digit kode rumah untuk bergabung dengan teman serumah Anda.",
+    "code_label": "Kode 6-digit",
+    "enter_code": "Masukkan kode",
+    "checking": "Memeriksa...",
+    "invalid_code": "Kode tidak valid. Silakan cek kembali dengan teman Anda.",
+    "error_find": "Rumah tidak ditemukan. Coba lagi.",
+    "select_member": "Siapa Anda?",
+    "select_member_desc": "Pilih nama Anda dari daftar di bawah:",
+    "welcome_house": "Selamat datang di rumah!",
+    "personalize_profile": "Personalisasi profil Anda",
+    "personalize_desc": "Opsional — Anda dapat mengubahnya nanti",
+    "save_and_enter": "Simpan & Masuk",
+    "already_joined": "Anda sudah menjadi anggota di rumah ini!"
+  },
+  "setup": {
+    "title": "Atur Rumah Anda",
+    "step_count": "Langkah {{current}} dari {{total}}",
+    "steps": {
+      "house_name": {
+        "title": "Beri nama NusaNest Anda",
+        "desc": "Pilih nama unik yang mudah dikenali teman serumah.",
+        "placeholder": "\"Rumah Hijau\", \"Apartemen 4B\"..."
+      },
+      "member_count": {
+        "title": "Berapa banyak teman serumah?",
+        "desc": "Termasuk Anda — berapa orang yang tinggal di {{house}}?",
+        "placeholder": "Misal: 4"
+      },
+      "member_names": {
+        "title": "Siapa saja yang tinggal di sana?",
+        "desc": "Masukkan nama-nama teman serumah Anda.",
+        "label": "Orang {{index}}",
+        "placeholder": "Nama orang {{index}}"
+      },
+      "cleaning_rotation": {
+        "title": "Apa urutan rotasi piket?",
+        "subtitle": "Tentukan urutan giliran piket. Rumah akan mengikuti urutan ini secara tepat.",
+        "note": "Urutan ini berulang terus. Setelah orang terakhir, kembali ke orang pertama."
+      },
+      "supplies_rotation": {
+        "title": "Apa urutan rotasi kebutuhan?",
+        "subtitle": "Tentukan urutan belanja kebutuhan bersama. Berlaku untuk semua barang.",
+        "note": "Urutan ini berlaku untuk semua barang. Setelah orang terakhir, kembali ke orang pertama."
+      },
+      "share_items": {
+        "title": "Apa saja yang dibagi bersama?",
+        "desc": "Pilih semua barang yang dibeli rumah Anda bersama. Tambahkan barang sendiri juga.",
+        "add_custom": "Tambah barang khusus",
+        "custom_placeholder": "Misal: Plastik sampah, roti...",
+        "add_btn": "Tambah Barang",
+        "continue_count": "Lanjut dengan {{count}} barang"
+      },
+      "cleaning_schedule": {
+        "title": "Jadwal piket?",
+        "desc": "Apakah rumah Anda punya rotasi tugas pembersihan?",
+        "yes": "✅ Ya, ada rotasi",
+        "no": "❌ Tidak ada jadwal",
+        "frequency": "Seberapa sering?",
+        "day": "Hari apa?"
+      },
+      "starting_point": {
+        "title": "Titik Awal",
+        "desc": "Beri tahu kami siapa yang terakhir beli tiap barang dan siapa selanjutnya. Begitulah kita memulai rotasi.",
+        "last_bought": "Siapa yang terakhir beli {{item}}?",
+        "next_buyer": "Siapa yang harus beli {{item}} selanjutnya?",
+        "last_cleaned": "Siapa yang terakhir piket? ({{date}})",
+        "next_cleaner": "Siapa yang piket selanjutnya? ({{date}})",
+        "generate_btn": "🎉 Buat Kode Rumah",
+        "setting_up": "Mengatur NusaNest Anda..."
+      },
+      "house_code": {
+        "title": "NusaNest Anda Sudah Siap!",
+        "desc": "Bagikan kode ini dengan teman serumah Anda:",
+        "copy_btn": "📋 Salin kode",
+        "copied": "✅ Tersalin!",
+        "summary_title": "Ringkasan NusaNest Anda",
+        "items_summary": "🛒 {{count}} barang bersama:",
+        "cleaning_summary": "🧹 Piket:",
+        "cleaning_none": "Tidak dijadwalkan",
+        "cleaning_freq": {
+          "weekly": "Setiap minggu",
+          "biweekly": "Tiap 2 minggu",
+          "monthly": "Bulanan"
+        },
+        "cleaning_on": "pada hari {{day}}",
+        "cleaning_order": "🔄 Urutan piket:",
+        "supplies_order": "🔄 Urutan kebutuhan:",
+        "who_are_you": "Siapa Anda? ←"
+      },
+      "who_are_you": {
+        "title": "Siapa Anda?",
+        "desc": "Pilih nama Anda untuk masuk ke NusaNest:",
+        "joined_on": "Bergabung {{date}}"
+      },
+      "profile_setup": {
+        "title": "Personalisasi profil Anda",
+        "desc": "Opsional — Anda dapat mengubahnya nanti",
+        "nickname_label": "Nama Tampilan Anda",
+        "country_label": "Pilih bendera negara"
+      }
+    },
+    "confirm_order": "Konfirmasi Urutan",
+    "finish": "Selesaikan Pengaturan",
+    "save_and_continue": "Simpan & Lanjutkan",
+    "skip_now": "Lewati sekarang"
+  },
+  "dashboard": {
+    "hello": "Halo,",
+    "logout": "Keluar",
+    "house_code": "Kode Rumah",
+    "sidebar": {
+      "home": "Beranda",
+      "cleaning": "Piket",
+      "supplies": "Kebutuhan",
+      "history": "Riwayat",
+      "settings": "Pengaturan",
+      "profile": "Profil Saya",
+      "share": "Bagikan NusaNest",
+      "share_desc": "Undang teman serumah via WhatsApp",
+      "report": "Laporkan Masalah",
+      "report_desc": "Laporkan masalah rumah secara anonim",
+      "travel": "Mode Perjalanan",
+      "travel_desc": "Jeda giliran Anda saat bepergian",
+      "leave": "Tinggalkan Rumah",
+      "leave_desc": "Kembali ke layar masuk",
+      "footer_text": "NUSA NEST · {{count}} ANGGOTA"
+    },
+    "motivation": {
+      "1": "Siap membuat rumah ini lebih baik hari ini?",
+      "2": "Kerja tim membuat impian jadi nyata — mari cek daftar.",
+      "3": "Tindakan kecil, dampak besar. Anda luar biasa!",
+      "4": "Jaga keadilan rumah, jaga kebahagiaan rumah." ,
+      "5": "Hidup teratur mulai dari sini. Apa yang pertama?",
+      "6": "Anda pasti bisa! Mari jaga semuanya tetap lancar.",
+      "7": "Teman serumah Anda menghargai semua yang Anda lakukan! 🏠",
+      "8": "Sedikit kemajuan setiap hari menambah hasil yang besar.",
+      "9": "Bagian adil, rumah bahagia! Mari tetap pantau.",
+      "10": "Semuanya lebih mudah jika kita melakukannya bersama."
+    },
+    "share_copied": "📋 Pesan disalin — tempel di WhatsApp!",
+    "cleaning_logged": "🧹 Piket dicatat!",
+    "supply_saved": "{{icon}} {{label}} disimpan!",
+    "welcome_back": "Selamat datang kembali! Perjalanan Anda berakhir! 🏠",
+    "leave_house_title": "Tinggalkan rumah?",
+    "leave_house_desc": "Anda akan dikembalikan ke layar utama. Anda bisa bergabung kembali kapan saja menggunakan kode rumah {{code}}."
+  },
+  "tabs": {
+    "home": "Beranda",
+    "cleaning": "Piket",
+    "supplies": "Kebutuhan",
+    "history": "Riwayat"
+  },
+  "home": {
+    "cleaning": {
+      "title": "Piket Kebersihan",
+      "next": "Selanjutnya",
+      "responsible": "Penanggung Jawab",
+      "last_cleaned": "Terakhir dibersihkan oleh {{name}}",
+      "your_turn": "Giliran Anda piket minggu ini"
+    },
+    "supplies": {
+      "title": "Kebutuhan Rumah",
+      "last": "Terakhir",
+      "your_turn": "Giliran Anda: {{items}}"
+    },
+    "travel": {
+      "you_are_travelling": "Anda sedang bepergian",
+      "member_is_travelling": "{{name}} sedang bepergian",
+      "until": "Sampai {{date}}"
+    },
+    "iou": {
+      "title": "Hutang Perjalanan (IOU)",
+      "you_owe": "Anda berhutang ke {{name}}",
+      "member_owes_you": "{{name}} berhutang ke Anda",
+      "member_owes_member": "{{traveller}} berhutang ke {{cover}}",
+      "for_item": "Untuk {{item}} — {{period}}"
+    },
+    "motivation_1": "Bagian adil, rumah bahagia! Mari tetap pantau.",
+    "motivation_2": "Tindakan kecil menjaga ketenangan. Anda bisa!",
+    "motivation_3": "Rumah bersih adalah rumah bahagia. 🏠",
+    "motivation_4": "Teman serumah hebat membuat kenangan hebat.",
+    "motivation_5": "Kerja tim membuat impian jadi nyata! 🤝",
+    "motivation_6": "Giliranmu hari ini menjauhkan pertengkaran. 💪",
+    "motivation_7": "Hidup bersama adalah seni — kamu makin mahir setiap hari. 🎨",
+    "motivation_8": "Satu pembersihan kecil, satu langkah besar bagi penghuni rumah. 🚀",
+    "motivation_9": "Rasa hormat dimulai dari rumah. Kamu luar biasa. ✨",
+    "motivation_10": "Jauh dari rumah, tapi tak pernah jauh dari keluarga. 🌍",
+    "motivation_11": "Teman serumahmu menghargai usahamu. Pertahankan! 🌟",
+    "motivation_12": "Rumah bersama berjalan dengan tanggung jawab bersama. 🏡"
+  },
+  "cleaning": {
+    "title": "Piket Kebersihan",
+    "next_cleaning": "Piket Selanjutnya",
+    "responsible": "Penanggung Jawab: {{name}}",
+    "waiting_for": "Menunggu {{name}}",
+    "marked_done": "Piket ditandai selesai!",
+    "i_cleaned": "Saya sudah membersihkan",
+    "last_cleaning": "Piket Terakhir",
+    "no_records": "Belum ada catatan piket.",
+    "upcoming_turns": "Jadwal Mendatang",
+    "no_upcoming": "Belum ada jadwal mendatang.",
+    "next_tag": "selanjutnya",
+    "messages": [
+      "Kerja bagus! Seluruh rumah berterima kasih!",
+      "Bersih berkilau! Anda hebat!",
+      "Luar biasa! Pahlawan sesungguhnya!",
+      "Juara kebersihan ada di sini!",
+      "Nah, ini baru mantap!"
+    ]
+  },
+  "supplies": {
+    "title": "Kebutuhan Rumah",
+    "next_buyer": "Pembeli Selanjutnya — Per Barang",
+    "next": "Selanjutnya",
+    "i_bought_it": "Saya sudah beli",
+    "confirm_item": "Konfirmasi {{item}}",
+    "purchase_saved": "Pembelian disimpan! Terima kasih!",
+    "upcoming_turns": "Jadwal Mendatang",
+    "messages": {
+      "Water": [
+        "Jaga hidrasi! Luar biasa!",
+        "Air tersedia! Seluruh rumah senang!",
+        "Tidak ada yang haus selagi ada Anda! 🙌"
+      ],
+      "Gas": [
+        "Masak sudah bisa lagi! Hebat!",
+        "Gas tersedia! Makanan hangat segera datang!",
+        "Anda benar-benar menjaga kehangatan rumah! ❤️"
+      ],
+      "Soap & Sponge": [
+        "Juara kebersihan ada di sini!",
+        "Buih penghargaan untuk Anda!",
+        "Piring-piring berterima kasih secara pribadi! 🍽️"
+      ]
+    }
+  },
+  "history": {
+    "title": "Riwayat",
+    "activity": "Aktivitas",
+    "reports": "Laporan",
+    "recent_activity": "Aktivitas Terbaru",
+    "records_count": "{{count}} Catatan",
+    "cleaned_house": "membersihkan rumah 🧹",
+    "bought_item": "membeli {{item}} 🛒",
+    "no_activity": "Belum ada aktivitas",
+    "period": "Periode Laporan",
+    "leaderboard": "Papan Peringkat",
+    "cleaning_stats": "Piket",
+    "shopping_stats": "Belanja",
+    "turns_completed": "Piket Selesai",
+    "items_restocked": "Barang Dibeli",
+    "supply_breakdown": "Detail Kebutuhan",
+    "save_png": "Simpan PNG",
+    "no_data": "Tidak ada data untuk bulan ini",
+    "no_data_desc": "Catatan aktivitas akan muncul di sini saat anggota melakukan piket dan belanja."
+  },
+  "settings": {
+    "title": "Pengaturan Rumah",
+    "tabs": {
+      "members": "Anggota",
+      "supplies": "Kebutuhan",
+      "cleaning": "Piket",
+      "rotation": "Rotasi"
+    },
+    "members": {
+      "title": "Anggota",
+      "current": "Anggota Saat Ini ({{count}})",
+      "remove_confirm": "Konfirmasi",
+      "remove_cancel": "Batal",
+      "new_placeholder": "Nama anggota baru...",
+      "add_button": "Tambah"
+    },
+    "supplies": {
+      "shared": "Kebutuhan Bersama ({{count}})",
+      "members_button": "Anggota",
+      "hide_button": "Sembunyikan",
+      "who_buys": "Siapa yang beli {{item}}?",
+      "excluded": "Dikecualikan",
+      "pick_emoji": "Pilih emoji",
+      "name_placeholder": "Nama kebutuhan...",
+      "add_supply": "Tambah Kebutuhan",
+      "add_new": "Tambah kebutuhan baru"
+    },
+    "cleaning": {
+      "enable": "Rotasi Piket",
+      "desc": "Pantau siapa yang piket dan kapan",
+      "frequency": "Seberapa sering?",
+      "freq_options": {
+        "weekly": "Mingguan",
+        "biweekly": "Tiap 2 minggu",
+        "monthly": "Bulanan"
+      },
+      "day": "Hari apa?",
+      "who_participates": "Siapa yang ikut piket?",
+      "at_least_one": "⚠️ Minimal 1 orang harus tetap dalam rotasi."
+    },
+    "rotation": {
+      "cleaning": "Urutan Piket",
+      "supplies": "Urutan Kebutuhan"
+    }
+  },
+  "notifications": {
+    "title": "Notifikasi",
+    "empty": "Belum ada notifikasi 🎉",
+    "empty_desc": "Kami akan memberi tahu Anda jika terjadi sesuatu di rumah Anda.",
+    "support": "Dukung",
+    "decline": "Tolak",
+    "recorded": "Tanggapan dicatat"
+  },
+  "travel": {
+    "title": "Mode Perjalanan",
+    "step": "Langkah {{current}} dari {{total}}",
+    "who": "Siapa yang bepergian?",
+    "dates": "Tanggal",
+    "departure": "Keberangkatan",
+    "return": "Kembali (Perkiraan)",
+    "supplies_desc": "Giliran piket akan dilewati secara otomatis. Untuk kebutuhan, tentukan barangkali giliran harus dilewati atau ditanggung oleh orang lain (membuat IOU).",
+    "decisions": "Keputusan Kebutuhan",
+    "skip": "Lewati",
+    "cover": "Tanggung / IOU",
+    "who_covers": "Siapa yang menanggung?",
+    "ready": "Siap untuk perjalanan?",
+    "plan": "Rencana Kebutuhan",
+    "activate": "Aktifkan Mode Perjalanan ✈️",
+    "activating": "Mengaktifkan...",
+    "success": "Mode Perjalanan diaktifkan! ✈️",
+    "error": "Gagal mengaktifkan Mode Perjalanan"
+  },
+  "report": {
+    "title": "Laporkan Masalah",
+    "step_1": "Tentang apakah ini?",
+    "step_2": "Beri tahu kami lebih lanjut",
+    "step_3": "Jelaskan apa yang terjadi",
+    "step_4": "Apakah orang lain juga terkena dampaknya?",
+    "step_5": "Sesaat sebelum Anda mengirim",
+    "types": {
+      "cleaning": "Tanggung jawab kebersihan",
+      "supplies": "Tanggung jawab kebutuhan",
+      "behavior": "Perilaku atau sikap",
+      "other": "Sesuatu yang lain"
+    },
+    "severities": {
+      "minor": "Masalah kecil",
+      "moderate": "Masalah sedang",
+      "serious": "Masalah serius"
+    },
+    "durations": {
+      "once": "Cuma sekali",
+      "few_times": "Beberapa kali",
+      "ongoing": "Terus menerus terjadi"
+    },
+    "which_housemate": "Tentang teman serumah yang mana ini?",
+    "severity_label": "Seberapa serius masalah ini?",
+    "duration_label": "Sudah berapa lama ini terjadi?",
+    "optional_desc": "Opsional — tetapi detail lebih lanjut membantu universitas memahami",
+    "placeholder_desc": "misal: Belum piket selama 3 minggu meskipun sudah diingatkan...",
+    "cosign_desc": "Anda dapat meminta teman serumah untuk ikut menandatangani laporan ini. Mereka akan menerima notifikasi pribadi dan dapat memilih untuk mendukung atau menolak. Ini sepenuhnya opsional.",
+    "no_candidates": "Tidak ada teman serumah lain yang tersedia",
+    "solidarity_btn": "Lanjutkan dengan Pendukung",
+    "just_me_btn": "Tidak, saya sendiri saja",
+    "resolution_reminder": "\"Sebelum ini sampai ke universitas — apakah Anda sudah sempat memberitahu teman serumah Anda secara tenang tentang masalah ini? Terkadang percakapan yang tenang dan saling menghormati adalah kuncinya. Keterlibatan universitas ada di sini sebagai upaya terakhir, bukan langkah pertama.\"",
+    "submit_btn": "Ya, saya sudah mencoba — Kirim Laporan",
+    "try_talking_btn": "Saya akan coba bicara dulu",
+    "submitting": "Mengirim...",
+    "success": "Laporan terkirim ✓ Referensi: {{ref}}",
+    "error": "Gagal mengirim laporan. Silakan coba lagi.",
+    "skip_toast": "Semoga berhasil 🤝 Anda selalu bisa kembali jika perlu."
+  },
+  "profile": {
+    "nickname": "Nama Panggilan / Nama Tampilan",
+    "char_limit": "{{current}}/{{max}} karakter",
+    "language": "Bahasa Aplikasi",
+    "reminders": "Preferensi Notifikasi",
+    "cleaning_reminders": "Pengingat piket",
+    "supplies_reminders": "Pengingat kebutuhan",
+    "travel_alerts": "Peringatan perjalanan",
+    "report_notifications": "Notifikasi laporan",
+    "my_activity": "Aktivitas Saya",
+    "total_cleans": "Total Piket",
+    "total_purchases": "Total Pembelian",
+    "this_month": "Bulan Ini",
+    "view_full_report": "Lihat laporan lengkap",
+    "updated": "Profil diperbarui ✓",
+    "tap_to_change_avatar": "Ketuk avatar untuk kustomisasi",
+    "avatar_updated": "Avatar diperbarui! ✓"
+  },
+  "avatar": {
+    "choose_color": "Pilih warna Anda",
+    "choose_country": "Pilih negara Anda",
+    "search_country": "Cari negara...",
+    "apply": "Terapkan",
+    "color_and_initials": "Warna & Inisial",
+    "country_flag": "Bendera Negara"
+  }
+}

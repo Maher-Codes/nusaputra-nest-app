@@ -1,0 +1,498 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "skip": "Skip",
+    "done": "Done",
+    "loading": "Loading...",
+    "confirm": "Confirm",
+    "back_panel": "Close panel",
+    "back_to_home": "Back to Home",
+    "back_to_landing": "Back to Landing",
+    "you": "You",
+    "yesterday": "Yesterday",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "until": "Until",
+    "success": "Success",
+    "error": "Error",
+    "settle": "Settle",
+    "i_am_back": "I'm back",
+    "saving": "Saving...",
+    "close": "Close",
+    "undo": "Undo"
+  },
+  "landing": {
+    "title": "Welcome to NusaNest",
+    "subtitle": "Student Living, Simplified",
+    "university": "Universitas Nusa Putra",
+    "cta_question": "What would you like to do?",
+    "setup_house_title": "Set up a new house",
+    "setup_house_desc": "Create your house and invite housemates",
+    "join_house_title": "Join existing house",
+    "join_house_desc": "Enter your 6-digit house code",
+    "how_it_works_title": "New to NusaNest?",
+    "how_it_works_subtitle": "Here's how it works",
+    "features": [
+      {
+        "title": "Create your house",
+        "desc": "One person sets up the house in under 2 minutes — name it, add housemates, and choose what you share together."
+      },
+      {
+        "title": "Share the 6-digit code",
+        "desc": "A unique code is generated for your house. Housemates enter it once to join. No accounts, no passwords."
+      },
+      {
+        "title": "Cleaning rotates automatically",
+        "desc": "HouseHub tracks whose turn it is to clean. After someone logs their clean, the schedule moves to the next person."
+      },
+      {
+        "title": "Supplies rotate fairly",
+        "desc": "Each shared item has its own rotation. When someone buys it, the next person's name appears automatically."
+      },
+      {
+        "title": "Full history for everyone",
+        "desc": "Every clean and purchase is recorded. Anyone can check the History tab to see their own or a housemate's record."
+      },
+      {
+        "title": "Always in sync",
+        "desc": "The dashboard updates in real time across all devices. No refresh needed."
+      }
+    ],
+    "show_more": "See all {{count}} features",
+    "show_less": "Show less",
+    "faq_title": "Got questions?",
+    "faq_subtitle": "Common answers",
+    "faqs": [
+      {
+        "q": "Do I need to create an account?",
+        "a": "No. NusaNest uses a 6-digit house code instead of accounts. Enter the code your housemate shares and you're in instantly."
+      },
+      {
+        "q": "What if I log something by mistake?",
+        "a": "Every action has an Undo button that appears for 5 seconds after logging. Tap it to reverse the action completely."
+      },
+      {
+        "q": "Can we add our own supply items?",
+        "a": "Yes — during setup you can add any custom item with your own emoji and name. NusaNest adapts to your house's needs."
+      },
+      {
+        "q": "What if someone moves out?",
+        "a": "The remaining members continue their rotation. New members can join anytime using the same house code."
+      },
+      {
+        "q": "Is our data private?",
+        "a": "Your house is only accessible to people who know your 6-digit code. Without it, nobody can see your house."
+      }
+    ],
+    "install": {
+      "title": "Install NusaNest",
+      "desc": "Add to your home screen for the best experience",
+      "btn": "Install"
+    },
+    "footer": {
+      "main": "NusaNest keeps shared homes organized and fair.",
+      "desc": "Cleaning schedules and supply responsibilities rotate clearly so everyone always knows whose turn it is.",
+      "copyright": "© 2025 NusaNest for Universitas Nusa Putra — International Student Living",
+      "tagline": "Simple · Fair · Organized living."
+    }
+  },
+  "join": {
+    "title": "Join a House",
+    "subtitle": "Enter your 6-digit house code to join your housemates.",
+    "code_label": "6-digit code",
+    "enter_code": "Enter code",
+    "checking": "Checking code...",
+    "invalid_code": "Invalid house code. Please check with your housemates.",
+    "error_find": "Could not find house. Try again.",
+    "select_member": "Who are you?",
+    "select_member_desc": "Select your name from the list below:",
+    "welcome_house": "Welcome to the house!",
+    "personalize_profile": "Personalize your profile",
+    "personalize_desc": "Optional — you can always change this later",
+    "save_and_enter": "Save & Enter",
+    "already_joined": "You're already in this house!"
+  },
+  "setup": {
+    "title": "Setup your House",
+    "step_count": "Step {{current}} of {{total}}",
+    "steps": {
+      "house_name": {
+        "title": "Name your NusaNest",
+        "desc": "Give your house a memorable name that your housemates will recognise.",
+        "placeholder": "\"The Green House\", \"Apartment 4B\"..."
+      },
+      "member_count": {
+        "title": "How many housemates?",
+        "desc": "Including yourself — how many people live in {{house}}?",
+        "placeholder": "e.g. 4"
+      },
+      "member_names": {
+        "title": "Who lives there?",
+        "desc": "Enter each housemate's name.",
+        "label": "Person {{index}}",
+        "placeholder": "Name of person {{index}}"
+      },
+      "cleaning_rotation": {
+        "title": "What is the cleaning rotation order?",
+        "subtitle": "Set the order for cleaning turns. The house follows this exact sequence.",
+        "note": "This order repeats forever. After the last person it goes back to the first."
+      },
+      "supplies_rotation": {
+        "title": "What is the supplies rotation order?",
+        "subtitle": "Set the order for buying shared supplies. This applies to all items equally.",
+        "note": "This order applies to all shared items. After the last person it goes back to the first."
+      },
+      "share_items": {
+        "title": "What do you share?",
+        "desc": "Select everything your house buys together. Add your own items too — every house is different.",
+        "add_custom": "Add your own item",
+        "custom_placeholder": "e.g. Trash bags, Bread...",
+        "add_btn": "Add item",
+        "continue_count": "Continue with {{count}} items"
+      },
+      "cleaning_schedule": {
+        "title": "Cleaning schedule?",
+        "desc": "Does your house rotate cleaning duties?",
+        "yes": "✅ Yes, we rotate",
+        "no": "❌ No schedule",
+        "frequency": "How often?",
+        "day": "Which day?"
+      },
+      "starting_point": {
+        "title": "Starting point",
+        "desc": "Tell us who last bought each item and who's next. This is how we start the rotation.",
+        "last_bought": "Who bought {{item}} last?",
+        "next_buyer": "Who should buy {{item}} next?",
+        "last_cleaned": "Who cleaned last? ({{date}})",
+        "next_cleaner": "Who cleans next? ({{date}})",
+        "generate_btn": "🎉 Generate House Code",
+        "setting_up": "Setting up your NusaNest..."
+      },
+      "house_code": {
+        "title": "Your NusaNest is Ready!",
+        "desc": "Share this code with your housemates:",
+        "copy_btn": "📋 Copy code",
+        "copied": "✅ Copied!",
+        "summary_title": "Your NusaNest summary",
+        "items_summary": "🛒 {{count}} shared items:",
+        "cleaning_summary": "🧹 Cleaning:",
+        "cleaning_none": "Not scheduled",
+        "cleaning_freq": {
+          "weekly": "Every week",
+          "biweekly": "Every 2 weeks",
+          "monthly": "Monthly"
+        },
+        "cleaning_on": "on {{day}}s",
+        "cleaning_order": "🔄 Cleaning order:",
+        "supplies_order": "🔄 Supplies order:",
+        "who_are_you": "Who are you? →"
+      },
+      "who_are_you": {
+        "title": "Who are you?",
+        "desc": "Select your name to enter your NusaNest:",
+        "joined_on": "Joined {{date}}"
+      },
+      "profile_setup": {
+        "title": "Personalise your profile",
+        "desc": "Optional — you can always change this later",
+        "nickname_label": "Your Display Name",
+        "country_label": "Select your country flag"
+      }
+    },
+    "confirm_order": "Confirm order",
+    "finish": "Finish Setup",
+    "save_and_continue": "Save & Continue",
+    "skip_now": "Skip for now"
+  },
+  "dashboard": {
+    "hello": "Hello,",
+    "logout": "Logout",
+    "house_code": "House Code",
+    "sidebar": {
+      "home": "Home",
+      "cleaning": "Cleaning",
+      "supplies": "Supplies",
+      "history": "History",
+      "settings": "Settings",
+      "profile": "My Profile",
+      "share": "Share NusaNest",
+      "share_desc": "Invite housemates via WhatsApp",
+      "report": "Report A Problem",
+      "report_desc": "Anonymously report house issues",
+      "travel": "Travel Mode",
+      "travel_desc": "Pause your turns while away",
+      "leave": "Leave House",
+      "leave_desc": "Return to the entry screen",
+      "footer_text": "NUSA NEST · {{count}} MEMBERS"
+    },
+    "motivation": {
+      "1": "Ready to make this home even better today?",
+      "2": "Teamwork makes the dream work — let's check the list.",
+      "3": "Small actions, big impact. You're doing great!",
+      "4": "Keep the house fair, keep the house happy.",
+      "5": "Organized living starts here. What's first?",
+      "6": "You've got this! Let's keep things moving smoothly.",
+      "7": "Your housemates appreciate everything you do! 🏠",
+      "8": "A little progress each day adds up to a big result.",
+      "9": "Fair share, happy house! Let's stay on top of it.",
+      "10": "Everything is easier when we do it together."
+    },
+    "share_copied": "📋 Message copied — paste it in WhatsApp!",
+    "cleaning_logged": "🧹 Cleaning logged!",
+    "supply_saved": "{{icon}} {{label}} saved!",
+    "welcome_back": "Welcome back? Your travel ended! 🏠",
+    "leave_house_title": "Leave house?",
+    "leave_house_desc": "You'll be taken back to the home screen. You can rejoin anytime using the house code {{code}}."
+  },
+  "tabs": {
+    "home": "Home",
+    "cleaning": "Cleaning",
+    "supplies": "Supplies",
+    "history": "History"
+  },
+  "home": {
+    "cleaning": {
+      "title": "Cleaning",
+      "next": "Next",
+      "responsible": "Responsible",
+      "last_cleaned": "Last cleaned by {{name}}",
+      "your_turn": "Your turn to clean this week"
+    },
+    "supplies": {
+      "title": "Supplies",
+      "last": "Last",
+      "your_turn": "Your turn: {{items}}"
+    },
+    "travel": {
+      "you_are_travelling": "You are on travel",
+      "member_is_travelling": "{{name}} is on travel",
+      "until": "Until {{date}}"
+    },
+    "iou": {
+      "title": "Travel IOUs",
+      "you_owe": "You owe {{name}}",
+      "member_owes_you": "{{name}} owes you",
+      "member_owes_member": "{{traveller}} owes {{cover}}",
+      "for_item": "For {{item}} — {{period}}"
+    },
+    "motivation_1": "Fair share, happy house! Let's stay on top of it.",
+    "motivation_2": "Every small action keeps the peace. You've got this!",
+    "motivation_3": "A clean home is a happy home. 🏠",
+    "motivation_4": "Great housemates make great memories.",
+    "motivation_5": "Teamwork makes the dream work! 🤝",
+    "motivation_6": "Your turn today keeps the arguments away. 💪",
+    "motivation_7": "Living together is an art — you're getting better every day. 🎨",
+    "motivation_8": "One small clean, one giant leap for housemate-kind. 🚀",
+    "motivation_9": "Respect starts at home. You're doing great. ✨",
+    "motivation_10": "Far from home, but never far from family. 🌍",
+    "motivation_11": "Your housemates notice the effort. Keep it up! 🌟",
+    "motivation_12": "A shared home runs on shared responsibility. 🏡"
+  },
+  "cleaning": {
+    "title": "Cleaning",
+    "next_cleaning": "Next Cleaning",
+    "responsible": "Responsible: {{name}}",
+    "waiting_for": "Waiting for {{name}}",
+    "marked_done": "Cleaning marked as done!",
+    "i_cleaned": "I cleaned the house",
+    "last_cleaning": "Last Cleaning",
+    "no_records": "No cleaning recorded yet.",
+    "upcoming_turns": "Upcoming Turns",
+    "no_upcoming": "No upcoming schedule yet.",
+    "next_tag": "next",
+    "messages": [
+      "Amazing work! The house thanks you!",
+      "Sparkling clean! You're a legend!",
+      "Look at you go! Absolute hero!",
+      "Champion cleaner right here!",
+      "That's what we're talking about!"
+    ]
+  },
+  "supplies": {
+    "title": "Supplies",
+    "next_buyer": "Next Buyer — Per Item",
+    "next": "Next",
+    "i_bought_it": "I bought it",
+    "confirm_item": "Confirm {{item}}",
+    "purchase_saved": "Purchase saved! Thank you!",
+    "upcoming_turns": "Upcoming Turns",
+    "messages": {
+      "Water": [
+        "Staying hydrated! Amazing!",
+        "Water secured! The house loves you!",
+        "No thirst on your watch! 🙌"
+      ],
+      "Gas": [
+        "Cooking is back on! Legend!",
+        "Gas secured! Hot meals incoming!",
+        "You're literally keeping the house warm! ❤️"
+      ],
+      "Soap & Sponge": [
+        "Cleanliness champion right here!",
+        "Bubbles of appreciation for you!",
+        "The dishes thank you personally! 🍽️"
+      ]
+    }
+  },
+  "history": {
+    "title": "History",
+    "activity": "Activity",
+    "reports": "Reports",
+    "recent_activity": "Recent Activity",
+    "records_count": "{{count}} Records",
+    "cleaned_house": "cleaned the house 🧹",
+    "bought_item": "bought {{item}} 🛒",
+    "no_activity": "No activity yet",
+    "period": "Reporting Period",
+    "leaderboard": "House Leaderboard",
+    "cleaning_stats": "Cleaning",
+    "shopping_stats": "Shopping",
+    "turns_completed": "Turns completed",
+    "items_restocked": "Items restocked",
+    "supply_breakdown": "Supply Breakdown",
+    "save_png": "Save PNG",
+    "no_data": "No data for this month",
+    "no_data_desc": "Activity records will appear here as members clean and shop."
+  },
+  "settings": {
+    "title": "House Settings",
+    "tabs": {
+      "members": "Members",
+      "supplies": "Supplies",
+      "cleaning": "Cleaning",
+      "rotation": "Rotation"
+    },
+    "members": {
+      "title": "Members",
+      "current": "Current Members ({{count}})",
+      "remove_confirm": "Confirm",
+      "remove_cancel": "Cancel",
+      "new_placeholder": "New member name...",
+      "add_button": "Add"
+    },
+    "supplies": {
+      "shared": "Shared Supplies ({{count}})",
+      "members_button": "Members",
+      "hide_button": "Hide",
+      "who_buys": "Who buys {{item}}?",
+      "excluded": "Excluded",
+      "pick_emoji": "Pick an emoji",
+      "name_placeholder": "Supply name...",
+      "add_supply": "Add Supply",
+      "add_new": "Add new supply"
+    },
+    "cleaning": {
+      "enable": "Cleaning Rotation",
+      "desc": "Track who cleans and when",
+      "frequency": "How often?",
+      "freq_options": {
+        "weekly": "Weekly",
+        "biweekly": "Every 2 weeks",
+        "monthly": "Monthly"
+      },
+      "day": "Which day?",
+      "who_participates": "Who participates in cleaning?",
+      "at_least_one": "⚠️ At least 1 person must remain in the rotation."
+    },
+    "rotation": {
+      "cleaning": "Cleaning Order",
+      "supplies": "Supplies Order"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet 🎉",
+    "empty_desc": "We'll let you know when something happens in your house.",
+    "support": "Support",
+    "decline": "Decline",
+    "recorded": "Response recorded"
+  },
+  "travel": {
+    "title": "Travel Mode",
+    "step": "Step {{current}} of {{total}}",
+    "who": "Who is travelling?",
+    "dates": "Dates",
+    "departure": "Departure",
+    "return": "Return (Approx)",
+    "supplies_desc": "Cleaning turns will be skipped automatically. For supplies, decide if turns should be skipped or covered by someone (creating an IOU).",
+    "decisions": "Supply Decisions",
+    "skip": "Skip",
+    "cover": "Cover / IOU",
+    "who_covers": "Who will cover?",
+    "ready": "Ready for the trip?",
+    "plan": "Supply Plan",
+    "activate": "Activate Travel Mode ✈️",
+    "activating": "Activating...",
+    "success": "Travel Mode activated! ✈️",
+    "error": "Failed to activate Travel Mode"
+  },
+  "report": {
+    "title": "Report A Problem",
+    "step_1": "What is this about?",
+    "step_2": "Tell us more",
+    "step_3": "Describe what happened",
+    "step_4": "Are others affected too?",
+    "step_5": "One moment before you submit",
+    "types": {
+      "cleaning": "Cleaning responsibilities",
+      "supplies": "Supplies responsibilities",
+      "behavior": "Behavior or attitude",
+      "other": "Something else"
+    },
+    "severities": {
+      "minor": "Minor concern",
+      "moderate": "Moderate issue",
+      "serious": "Serious problem"
+    },
+    "durations": {
+      "once": "Just once",
+      "few_times": "A few times",
+      "ongoing": "It keeps happening"
+    },
+    "which_housemate": "Which housemate is this about?",
+    "severity_label": "How serious is this?",
+    "duration_label": "How long has this been going on?",
+    "optional_desc": "Optional — but more detail helps the university understand",
+    "placeholder_desc": "e.g. Has not cleaned for 3 weeks despite reminders...",
+    "cosign_desc": "You can ask your housemates to co-sign this report. They will receive a private notification and can choose to support or decline. This is completely optional.",
+    "no_candidates": "No other housemates available",
+    "solidarity_btn": "Continue with Co-signers",
+    "just_me_btn": "No, just me",
+    "resolution_reminder": "\"Before this reaches the university — have you had a chance to calmly let your housemate know about this issue? Sometimes a quiet, respectful conversation is all it takes. The university's involvement is here as a last resort, not a first step.\"",
+    "submit_btn": "Yes, I've tried — Submit Report",
+    "try_talking_btn": "I'll try talking first",
+    "submitting": "Submitting...",
+    "success": "Report submitted ✓ Reference: {{ref}}",
+    "error": "Failed to submit report. Please try again.",
+    "skip_toast": "Good luck 🤝 You can always come back if needed."
+  },
+  "profile": {
+    "nickname": "Nickname / Display Name",
+    "char_limit": "{{current}}/{{max}} characters",
+    "language": "App Language",
+    "reminders": "Notification Preferences",
+    "cleaning_reminders": "Cleaning reminders",
+    "supplies_reminders": "Supplies reminders",
+    "travel_alerts": "Travel alerts",
+    "report_notifications": "Report notifications",
+    "my_activity": "My Activity",
+    "total_cleans": "Total Cleans",
+    "total_purchases": "Total Purchases",
+    "this_month": "This Month",
+    "view_full_report": "View full report",
+    "updated": "Profile updated ✓",
+    "tap_to_change_avatar": "Tap avatar to customize",
+    "avatar_updated": "Avatar updated! ✓"
+  },
+  "avatar": {
+    "choose_color": "Choose your color",
+    "choose_country": "Choose your country",
+    "search_country": "Search country...",
+    "apply": "Apply",
+    "color_and_initials": "Color & Initials",
+    "country_flag": "Country Flag"
+  }
+}
