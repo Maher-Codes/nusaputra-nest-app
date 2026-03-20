@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   Member, House, CleanRecord, Purchase, SupplyResponsibility,
   ActivityLog, RotationEntry, buildRotation, fmtDate, DAY_LABELS,
-  avatarColor, COUNTRIES, AV_COLORS, Supply
+  Supply
 } from "@/lib/househub";
 import Avatar from "./Avatar";
 import { houseService } from "@/services/houseService";
@@ -66,7 +66,7 @@ const EMOJI_PICKER = [
 // 8  — House code reveal
 // 9  — Who are you?
 // 10 — Profile personalization (Optional)
-const TOTAL_STEPS = 11;
+const TOTAL_STEPS = 10;
 
 const inputClass  = "w-full px-4 py-3.5 rounded-xl border border-border bg-card text-foreground text-base font-medium focus:outline-none focus:border-primary transition-colors";
 const btnPrimary  = "w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-base shadow-md hover:bg-primary/95 hover:translate-y-[-1px] active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none";
@@ -83,6 +83,21 @@ const swapItems = (arr: string[], i: number, j: number): string[] => {
   [next[i], next[j]] = [next[j], next[i]];
   return next;
 };
+
+const isValidName = (value: string) => /^[a-zA-Z\s\-']+$/.test(value);
+
+const MEMBER_PLACEHOLDERS = [
+  "e.g. Mohammed",
+  "e.g. Mostafa",
+  "e.g. Ahmed",
+  "e.g. Omar",
+  "e.g. Khalid",
+  "e.g. Ibrahim",
+  "e.g. Yusuf",
+  "e.g. Abdullah",
+  "e.g. Hassan",
+  "e.g. Ali",
+];
 
 const SetupWizard = ({ enterApp }: SetupWizardProps) => {
   const { t, i18n } = useTranslation();
@@ -110,7 +125,6 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
   const [isGenerating, setIsGen]  = useState(false);
   const [copied,       setCopied] = useState(false);
   const [chosen,       setChosen] = useState<string | null>(null);
-  const [profile,      setProfile] = useState<any | null>(null);
   const [error,        setError]  = useState<string | null>(null);
 
   const realHouseRef   = useRef<House | null>(null);
@@ -266,7 +280,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
   // ── Validation ──────────────────────────────────────────────────────────
   const v0 = houseName.trim().length > 1;
   const v1 = parseInt(count) >= 2 && parseInt(count) <= 20;
-  const v2 = names.length > 0 && names.every(n => n.trim().length > 0);
+  const v2 = names.length > 0 && names.every(n => n.trim().length > 0 && isValidName(n));
   const v3 = selectedSupplies.length > 0;
   const v6 = selectedSupplies.every(s => resp[s.id]?.last?.trim() && resp[s.id]?.next?.trim())
     && (!cleaningEnabled || (resp["__cleaning"]?.last?.trim() && resp["__cleaning"]?.next?.trim()));
@@ -378,38 +392,12 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
   const chooseMember = (m: Member | null) => { 
     if (!m) return;
     setChosen(m.id); 
-    // Instead of entering immediately, go to profile setup step
+    // Enter immediately after selecting member
     setTimeout(() => {
-      setProfile({
-        id: m.id,
-        nickname: m.name.split(" ")[0],
-        avatar_color: avatarColor(m.name),
-        country_code: "",
-        language: "en",
-        reminders: { cleaning: true, supplies: true, travel: true, reports: true },
-        updated_at: new Date().toISOString()
-      });
-      setStep(10); 
+      buildAndEnter(m);
     }, 450); 
   };
 
-  const finishAndEnter = async () => {
-    const m = realMembersRef.current.find(m => m.id === chosen);
-    if (!m || !profile) return;
-    
-    setIsGen(true);
-    try {
-      // Save profile if they customized it (or even if they didn't, to set defaults)
-      await houseService.saveMemberProfile(realHouseRef.current!.id, profile);
-      buildAndEnter(m);
-    } catch (err) {
-      console.error("Profile save failed:", err);
-      // Still enter app even if profile fails
-      buildAndEnter(m);
-    } finally {
-      setIsGen(false);
-    }
-  };
   const copyCode = () => { navigator.clipboard?.writeText(code).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
   return (
@@ -448,8 +436,12 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
               <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.house_name.title', "Name your NusaNest")}</h2>
               <p className="text-muted-foreground text-sm font-medium">{t('setup.steps.house_name.desc', "Give your house a memorable name that your housemates will recognise.")}</p>
             </div>
-            <input type="text" className={inputClass} placeholder={t('setup.steps.house_name.placeholder', '"The Green House", "Apartment 4B"…')}
-              value={houseName} onChange={e => setHN(e.target.value)}
+            <input type="text" className={inputClass} placeholder={t('setup.steps.house_name.placeholder', 'e.g. House 07')}
+              value={houseName} onChange={e => {
+                const raw = e.target.value;
+                const formatted = raw.charAt(0).toUpperCase() + raw.slice(1);
+                setHN(formatted);
+              }}
               onKeyDown={e => e.key === "Enter" && v0 && goNext()} autoFocus />
             <button className={btnPrimary} onClick={goNext} disabled={!v0}>{t('common.next', "Continue")} <ChevronRight size={16} className="inline ml-1" /></button>
           </div>
@@ -493,13 +485,27 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
               <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.member_names.title', "Who lives there?")}</h2>
               <p className="text-muted-foreground text-sm">{t('setup.steps.member_names.desc', "Enter each housemate's name.")}</p>
             </div>
-            {names.map((n, i) => (
-              <div key={i} className="animate-fade-up" style={{ animationDelay: `${i * 0.05}s` }}>
-                <label className="text-xs font-bold text-muted-foreground tracking-wider uppercase block mb-1.5">{t('setup.steps.member_names.label', { index: i + 1, defaultValue: `Person ${i + 1}` })}</label>
-                <input type="text" className={inputClass} placeholder={t('setup.steps.member_names.placeholder', { index: i + 1, defaultValue: `Name of person ${i + 1}` })}
-                  value={n} onChange={e => setNames(p => p.map((v, j) => j === i ? e.target.value : v))} />
-              </div>
-            ))}
+            {names.map((n, i) => {
+              const placeholder = MEMBER_PLACEHOLDERS[i] || `e.g. Housemate ${i + 1}`;
+              const valid = n.length === 0 || isValidName(n);
+
+              return (
+                <div key={i} className="animate-fade-up" style={{ animationDelay: `${i * 0.05}s` }}>
+                  <label className="text-xs font-bold text-muted-foreground tracking-wider uppercase block mb-1.5">{t('setup.steps.member_names.label', { index: i + 1, defaultValue: `Person ${i + 1}` })}</label>
+                  <input type="text" className={`${inputClass} ${!valid ? "border-destructive focus:border-destructive" : ""}`} placeholder={placeholder}
+                    value={n} onChange={e => {
+                      const raw = e.target.value.replace(/[0-9,\.]/g, '');
+                      const formatted = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+                      setNames(p => p.map((v, j) => j === i ? formatted : v));
+                    }} />
+                  {!valid && (
+                    <p className="text-destructive text-[10px] font-bold mt-1.5 animate-fade-down uppercase tracking-wider">
+                      ⚠️ {t('setup.steps.member_names.error', "Names should only contain letters — e.g. Mohammed, Sara")}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
             <button className={`${btnPrimary} mt-2`} onClick={handleNamesComplete} disabled={!v2}>{t('common.next', "Continue")} <ChevronRight size={16} className="inline ml-1" /></button>
           </div>
         )}
@@ -673,7 +679,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
               <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
             </div>
             <div>
-              <p className="text-4xl mb-3">🏁</p>
+
               <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.starting_point.title', "Starting point")}</h2>
               <p className="text-muted-foreground text-sm font-medium">{t('setup.steps.starting_point.desc', "Tell us who last bought each item and who's next. This is how we start the rotation.")}</p>
             </div>
@@ -755,82 +761,7 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
           </div>
         )}
 
-        {/* ── STEP 10 — Profile setup (NEW) ── */}
-        {step === 10 && profile && (
-          <div className="flex flex-col gap-6 animate-fade-up">
-            <div className="flex justify-between items-start">
-              <button className={btnOutline} onClick={() => setStep(9)}>← {t('common.back', "Back")}</button>
-              <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
-            </div>
-            <div className="text-center">
-              <p className="text-4xl mb-3">🎨</p>
-              <h2 className="font-display font-black text-2xl text-primary mb-1">{t('setup.steps.profile_setup.title', "Personalise your profile")}</h2>
-              <p className="text-muted-foreground text-sm font-medium">{t('setup.steps.profile_setup.desc', "Optional — you can always change this later")}</p>
-            </div>
 
-            <div className="flex flex-col items-center gap-6 py-4">
-              <Avatar 
-                member={realMembersRef.current.find(m => m.id === chosen)}
-                profile={profile}
-                size={100}
-                radius={32}
-                fontSize={28}
-              />
-              
-              <div className="w-full space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-2 text-center">{t('setup.steps.profile_setup.nickname_label', "Your Display Name")}</label>
-                  <input 
-                    type="text" 
-                    className={`${inputClass} text-center`}
-                    value={profile.nickname}
-                    onChange={(e) => setProfile({ ...profile, nickname: e.target.value.slice(0, 15) })}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-3 text-center">{t('setup.steps.profile_setup.country_label', "Select your country flag")}</label>
-                  <div className="flex gap-2 overflow-x-auto pb-2 justify-center no-scrollbar">
-                    {COUNTRIES.filter(c => ["ID", "AR", "EG", "PK", "BD", "YE", "SD", "PS", "MY", "JO"].includes(c.code)).map(c => (
-                      <button
-                        key={c.code}
-                        onClick={() => setProfile({ ...profile, country_code: c.code })}
-                        className={`text-2xl p-2 rounded-xl transition-all border-2 ${profile.country_code === c.code ? "border-primary bg-primary/5 scale-110" : "border-transparent"}`}
-                      >
-                        {c.flag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-3 text-center">{t('profile.avatar_color', "Pick a color")}</label>
-                  <div className="flex gap-2 justify-center">
-                    {AV_COLORS.slice(0, 7).map(color => (
-                      <button
-                        key={color}
-                        onClick={() => setProfile({ ...profile, avatar_color: color })}
-                        className={`w-8 h-8 rounded-full transition-all border-2 ${profile.avatar_color === color ? "border-foreground scale-110" : "border-transparent"}`}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <button className={btnPrimary} onClick={finishAndEnter} disabled={isGenerating}>
-              {isGenerating ? t('common.saving', "Saving...") : t('setup.finish', "Save & Enter NusaNest →")}
-            </button>
-            <button 
-              className="text-muted-foreground text-sm font-bold uppercase tracking-widest hover:text-foreground"
-              onClick={() => buildAndEnter(realMembersRef.current.find(m => m.id === chosen)!)}
-              disabled={isGenerating}
-            >
-              {t('setup.skip_now', "Skip for now")}
-            </button>
-          </div>
-        )}
 
       </div>
     </div>

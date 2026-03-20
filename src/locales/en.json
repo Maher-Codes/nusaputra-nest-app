@@ -122,7 +122,7 @@
       "house_name": {
         "title": "Name your NusaNest",
         "desc": "Give your house a memorable name that your housemates will recognise.",
-        "placeholder": "\"The Green House\", \"Apartment 4B\"..."
+        "placeholder": "e.g. House 07"
       },
       "member_count": {
         "title": "How many housemates?",

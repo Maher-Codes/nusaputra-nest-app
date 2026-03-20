@@ -89,7 +89,7 @@
       "house_name": {
         "title": "سمِّ NusaNest الخاص بك",
         "desc": "اختر اسماً مميزاً يتعرف عليه زملاؤك.",
-        "placeholder": "\"البيت الأخضر\"، \"شقة 4B\"..."
+        "placeholder": "e.g. House 07"
       },
       "member_count": {
         "title": "كم عدد الزملاء؟",

@@ -89,7 +89,7 @@
       "house_name": {
         "title": "Beri nama NusaNest Anda",
         "desc": "Pilih nama unik yang mudah dikenali teman serumah.",
-        "placeholder": "\"Rumah Hijau\", \"Apartemen 4B\"..."
+        "placeholder": "e.g. House 07"
       },
       "member_count": {
         "title": "Berapa banyak teman serumah?",
