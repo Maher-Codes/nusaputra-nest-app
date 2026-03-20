@@ -766,6 +766,7 @@ const Dashboard = ({
             activeSupplies={activeSupplies}
             topContributor={topContributor}
             houseId={house.id}
+            house={house}
             excludedMembers={houseSettingsData?.excluded_members || {}}
             memberProfiles={memberProfiles}
           />

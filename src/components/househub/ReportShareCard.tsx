@@ -1,85 +1,219 @@
-import { MemberMonthlyStats } from "@/lib/househub";
+import { Member, CleanRecord, Purchase, Supply, MemberProfile } from "@/lib/househub";
 
 interface ReportShareCardProps {
-  stats: MemberMonthlyStats;
-  monthName: string;
+  house: { name: string; house_code: string };
+  members: Member[];
+  cleanRecs: CleanRecord[];
+  purchases: Purchase[];
+  activeSupplies: Supply[];
+  memberProfiles: Record<string, MemberProfile>;
+  periodLabel: string;
+  reportType: "monthly" | "weekly";
 }
 
-const ReportShareCard = ({ stats, monthName }: ReportShareCardProps) => {
-  return (
-    <div 
-      id="report-share-card"
-      className="w-[360px] bg-white text-slate-900 overflow-hidden font-sans border border-slate-200 shadow-xl"
-      style={{ position: 'fixed', left: '-1000px', top: '0' }}
-    >
-      {/* Header */}
-      <div className="bg-[#770042] p-6 text-white text-center">
-        <h1 className="text-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2">
-          🏠 NusaNest
-        </h1>
-        <p className="text-[10px] font-bold opacity-80 uppercase tracking-[0.2em] mt-1">
-          Universitas Nusa Putra Student Housing
-        </p>
-      </div>
+function getDisplayName(
+  memberId: string,
+  members: Member[],
+  memberProfiles: Record<string, MemberProfile>
+): string {
+  const profile = memberProfiles[memberId];
+  const member = members.find(m => m.id === memberId);
+  const raw = profile?.nickname?.trim() || member?.name || "";
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
 
-      {/* Body */}
-      <div className="p-8">
-        <div className="flex flex-col items-center mb-8 border-b border-slate-100 pb-6">
-          <div className="w-16 h-16 rounded-2xl bg-[#770042] text-white flex items-center justify-center text-2xl font-black mb-3">
-            {stats.memberName[0]}
+const ReportShareCard = ({
+  house,
+  members,
+  cleanRecs,
+  purchases,
+  activeSupplies,
+  memberProfiles,
+  periodLabel,
+  reportType,
+}: ReportShareCardProps) => {
+  return (
+    <div
+      id="report-share-card"
+      style={{
+        width: "380px",
+        backgroundColor: "#ffffff",
+        fontFamily: "'Inter', sans-serif",
+        borderRadius: "20px",
+        overflow: "hidden",
+        border: "1px solid rgba(119,0,66,0.15)",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+      }}
+    >
+      {/* ── Header ── */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, #770042 0%, #4a0029 100%)",
+          padding: "24px 24px 20px 24px",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Decorative circles */}
+        <div style={{
+          position: "absolute", top: "-20px", right: "-20px",
+          width: "100px", height: "100px", borderRadius: "50%",
+          background: "radial-gradient(circle, #D4A373, transparent)", opacity: 0.15,
+        }} />
+        <div style={{
+          position: "absolute", bottom: "-10px", left: "-10px",
+          width: "70px", height: "70px", borderRadius: "50%",
+          background: "radial-gradient(circle, #ffffff, transparent)", opacity: 0.10,
+        }} />
+
+        {/* NusaNest branding */}
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+            <span style={{ fontSize: "20px" }}>🏠</span>
+            <span style={{ color: "#D4A373", fontWeight: 900, fontSize: "18px", letterSpacing: "-0.02em" }}>
+              NusaNest
+            </span>
           </div>
-          <h2 className="text-xl font-black text-[#770042]">{stats.memberName}</h2>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
-            {monthName} Performance Report
+          <p style={{ color: "rgba(255,255,255,0.9)", fontWeight: 900, fontSize: "15px", margin: 0 }}>
+            {house.name.toUpperCase()}
+          </p>
+          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "11px", fontWeight: 600, margin: "3px 0 0" }}>
+            {reportType === "weekly" ? "📅 Weekly Report" : "📆 Monthly Report"} · {periodLabel}
           </p>
         </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
-            <span className="flex items-center gap-2 font-bold text-sm">
-              <span>🧹</span> Cleaning
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold">{stats.cleaning.completed} / {Math.round(stats.cleaning.expected)} turns</span>
-              <span className={stats.cleaning.completed >= stats.cleaning.expected ? "text-green-600" : "text-red-500"}>
-                {stats.cleaning.completed >= stats.cleaning.expected ? "✅" : "❌"}
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 pl-1">🛒 Supplies</p>
-            {stats.supplies.map(s => (
-              <div key={s.itemId} className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
-                <span className="flex items-center gap-2 font-bold text-sm">
-                  <span>{s.itemIcon}</span> {s.itemLabel}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold">{s.completed} / {Math.round(s.expected)}</span>
-                  <span className={!s.missed ? "text-green-600" : "text-red-500"}>
-                    {!s.missed ? "✅" : "❌"}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-10 pt-6 border-t border-slate-100 flex items-end justify-between">
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Overall Score</p>
-            <p className="text-3xl font-black text-[#770042]">{stats.overallScore}%</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">House Rank</p>
-            <p className="text-xl font-black text-[#D4A373]">#{stats.rank} this month</p>
-          </div>
-        </div>
       </div>
 
-      {/* Footer */}
-      <div className="bg-[#770042] py-4 px-6 text-white/60 text-[9px] font-bold uppercase tracking-[0.2em] text-center">
-        Generated by NusaNest · Fair Shared Housing
+      {/* Members Summary */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        borderBottom: "1px solid #f1f5f9",
+        backgroundColor: "#fafafa",
+        justifyItems: "center",
+      }}>
+        {members.map((m, idx) => {
+          const memberCleans = cleanRecs.filter(r => r.member_id === m.id).length;
+          const memberPurchases = purchases.filter(p => p.member_id === m.id).length;
+          const displayName = getDisplayName(m.id, members, memberProfiles);
+          return (
+            <div key={m.id} style={{
+              padding: "12px 14px",
+              borderRight: idx < members.length - 1 ? "1px solid #f1f5f9" : "none",
+              width: "100%",
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+            }}>
+              <p style={{ fontWeight: 800, fontSize: "12px", color: "#770042", margin: 0, whiteSpace: "nowrap" }}>
+                {displayName}
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <p style={{ fontWeight: 700, fontSize: "12px", color: "#94a3b8", margin: 0 }}>→</p>
+                <p style={{ fontWeight: 700, fontSize: "12px", color: "#94a3b8", margin: 0 }}>→</p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <p style={{ fontSize: "11px", fontWeight: 600, color: "#770042", margin: 0 }}>Cleaned: {memberCleans}</p>
+                <p style={{ fontSize: "11px", fontWeight: 600, color: "#b8845a", margin: 0 }}>Bought: {memberPurchases}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Report Body ── */}
+      <div style={{ padding: "16px 20px" }}>
+
+        {/* Cleaning Section */}
+        <div style={{ marginBottom: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+            <span style={{ fontSize: "13px" }}>🧹</span>
+            <p style={{ fontWeight: 900, fontSize: "11px", color: "#770042", textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>
+              Cleaning
+            </p>
+          </div>
+          {cleanRecs.length > 0 ? (
+            cleanRecs
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .map(r => (
+                <div key={r.id} style={{
+                  display: "flex", alignItems: "center", gap: "8px",
+                  padding: "6px 0", borderBottom: "1px solid #f8fafc",
+                }}>
+                  <span style={{ color: "#22c55e", fontSize: "12px" }}>✓</span>
+                  <p style={{ fontSize: "12px", fontWeight: 600, color: "#334155", margin: 0, flex: 1 }}>
+                    <strong style={{ color: "#770042" }}>
+                      {getDisplayName(r.member_id, members, memberProfiles)}
+                    </strong> cleaned the house
+                  </p>
+                  <p style={{ fontSize: "10px", color: "#94a3b8", fontWeight: 600, margin: 0, whiteSpace: "nowrap" }}>
+                    {new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </p>
+                </div>
+              ))
+          ) : (
+            <p style={{ fontSize: "12px", color: "#94a3b8", fontStyle: "italic", margin: 0 }}>
+              No cleaning this period
+            </p>
+          )}
+        </div>
+
+        {/* Supply Sections */}
+        {activeSupplies.map(supply => {
+          const supplyPurchases = purchases
+            .filter(p => p.item_name === supply.label)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+          return (
+            <div key={supply.id} style={{ marginBottom: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+                <span style={{ fontSize: "13px" }}>{supply.icon}</span>
+                <p style={{ fontWeight: 900, fontSize: "11px", color: "#770042", textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>
+                  {supply.label}
+                </p>
+              </div>
+              {supplyPurchases.length > 0 ? (
+                supplyPurchases.map(p => (
+                  <div key={p.id} style={{
+                    display: "flex", alignItems: "center", gap: "8px",
+                    padding: "6px 0", borderBottom: "1px solid #f8fafc",
+                  }}>
+                    <span style={{ color: "#22c55e", fontSize: "12px" }}>✓</span>
+                    <p style={{ fontSize: "12px", fontWeight: 600, color: "#334155", margin: 0, flex: 1 }}>
+                      <strong style={{ color: "#770042" }}>
+                        {getDisplayName(p.member_id, members, memberProfiles)}
+                      </strong> bought {supply.label}
+                    </p>
+                    <p style={{ fontSize: "10px", color: "#94a3b8", fontWeight: 600, margin: 0, whiteSpace: "nowrap" }}>
+                      {new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p style={{ fontSize: "12px", color: "#94a3b8", fontStyle: "italic", margin: 0 }}>
+                  No purchases this period
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Footer ── */}
+      <div style={{
+        background: "linear-gradient(135deg, #770042 0%, #4a0029 100%)",
+        padding: "12px 20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}>
+        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "9px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.15em", margin: 0 }}>
+          Generated by NusaNest
+        </p>
+        <p style={{ color: "#D4A373", fontSize: "9px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.15em", margin: 0 }}>
+          Universitas Nusa Putra
+        </p>
       </div>
     </div>
   );
