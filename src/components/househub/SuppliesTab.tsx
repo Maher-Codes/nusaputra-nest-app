@@ -46,7 +46,7 @@ const SuppliesTab = ({
         
         // Get random message from locale
         const messagesObj = t('supplies.messages', { returnObjects: true }) as any;
-        const itemMessages = messagesObj[supply.label] || ["Purchase saved! Thank you!"];
+        const itemMessages = messagesObj[supply.label] || [t('supplies.purchase_saved')];
         const randomIndex = Math.floor(Math.random() * itemMessages.length);
         
         const emojis: Record<string, string> = { "Water": "💧", "Gas": "🔥", "Soap & Sponge": "🫧" };

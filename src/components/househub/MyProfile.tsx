@@ -263,7 +263,6 @@ const MyProfile = ({ member, houseId, houseCode, totalCleans, totalPurchases, me
           <div className="flex flex-col gap-2">
             {[
               { code: 'en', label: 'English',         flag: '🇺🇸', sub: 'Left to Right' },
-              { code: 'ar', label: 'العربية',          flag: '🇸🇦', sub: 'يمين إلى يسار' },
               { code: 'id', label: 'Bahasa Indonesia', flag: '🇮🇩', sub: 'Kiri ke Kanan' },
             ].map((lang) => (
               <button
@@ -337,9 +336,9 @@ const MyProfile = ({ member, houseId, houseCode, totalCleans, totalPurchases, me
           <img
             src="/nusa-putra-logo.png"
             alt="Nusa Putra"
-            className="h-5 w-auto grayscale opacity-20"
+            className="h-5 w-auto"
           />
-          <p className="text-[9px] text-center text-muted-foreground/30 uppercase font-black tracking-[0.18em]">
+          <p className="text-[9px] text-center uppercase font-black tracking-[0.18em]" style={{ color: "#770042", opacity: 0.6 }}>
             NusaNest v1.2 · Universitas Nusa Putra
           </p>
         </div>

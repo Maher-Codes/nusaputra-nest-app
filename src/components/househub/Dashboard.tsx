@@ -138,8 +138,10 @@ const Dashboard = ({
     async function restoreLanguage() {
       try {
         const profile = await houseService.getMemberProfile(house.id, user.id);
-        if (profile?.language) {
+        if (profile?.language && profile.language !== 'ar') {
           i18n.changeLanguage(profile.language);
+        } else if (profile?.language === 'ar') {
+          i18n.changeLanguage('en');
         }
       } catch {
         // Silently fail — default language stays
@@ -151,8 +153,10 @@ const Dashboard = ({
   // Watch for profile language changes from real-time listener
   useEffect(() => {
     const myProfile = memberProfiles[user.id];
-    if (myProfile?.language) {
+    if (myProfile?.language && myProfile.language !== 'ar') {
       i18n.changeLanguage(myProfile.language);
+    } else if (myProfile?.language === 'ar') {
+      i18n.changeLanguage('en');
     }
   }, [memberProfiles, user.id]);
 
@@ -440,6 +444,16 @@ const Dashboard = ({
 
     houseService.getHouseSettings(house.id).then(s => setHouseSettingsData(s));
 
+    // Firebase Members Listener
+    const membersRef = ref(db, `members/${house.id}`);
+    const unsubscribeMembers = onValue(membersRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const memberList: Member[] = Object.values(data);
+        setMembers(memberList);
+      }
+    });
+
     // Firebase Clean Records Listener
     const cleanRecsRef = ref(db, `clean_records/${house.id}`);
     const unsubscribeClean = onValue(cleanRecsRef, async (snapshot) => {
@@ -499,6 +513,8 @@ const Dashboard = ({
       if (snapshot.exists()) {
         const data = snapshot.val();
         const allNotifs = Object.values(data) as ReportNotification[];
+        
+        // Filter notifications by memberId on the client for privacy/security
         const filtered = allNotifs
           .filter(n => n.member_id === user.id)
           .sort((a, b) => b.created_at.localeCompare(a.created_at));
@@ -603,6 +619,7 @@ const Dashboard = ({
       unsubscribeIOUs();
       unsubscribeTop();
       unsubscribeProfiles();
+      unsubscribeMembers();
     };
   }, [house.id, rotation, user.id, supplyResps, activeSupplies, notifications, activeTravelModes, showToast]);
 

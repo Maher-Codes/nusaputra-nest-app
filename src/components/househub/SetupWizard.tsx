@@ -2,7 +2,7 @@ import { useState, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Member, House, CleanRecord, Purchase, SupplyResponsibility,
-  ActivityLog, RotationEntry, buildRotation, fmtDate, DAY_LABELS,
+  ActivityLog, RotationEntry, buildRotation,
   Supply
 } from "@/lib/househub";
 import Avatar from "./Avatar";
@@ -11,18 +11,19 @@ import { Plus, X, Check, ChevronRight } from "lucide-react";
 
 interface SetupWizardProps {
   enterApp: (
-    member:               Member,
-    house:                House,
-    members:              Member[],
-    cleanRecs:            CleanRecord[],
-    purchases:            Purchase[],
-    log:                  ActivityLog[],
-    rotation:             RotationEntry[],
-    supplyResps:          SupplyResponsibility[],
-    cleaningEnabled:      boolean,
+    member:                Member,
+    house:                 House,
+    members:               Member[],
+    cleanRecs:             CleanRecord[],
+    purchases:             Purchase[],
+    log:                   ActivityLog[],
+    rotation:              RotationEntry[],
+    supplyResps:           SupplyResponsibility[],
+    cleaningEnabled:       boolean,
     cleaningRotationOrder: string[],
     suppliesRotationOrder: string[],
   ) => void;
+  onBack: () => void;
 }
 
 const SUGGESTED_SUPPLIES: Supply[] = [
@@ -99,7 +100,7 @@ const MEMBER_PLACEHOLDERS = [
   "e.g. Ali",
 ];
 
-const SetupWizard = ({ enterApp }: SetupWizardProps) => {
+const SetupWizard = ({ enterApp, onBack }: SetupWizardProps) => {
   const { t, i18n } = useTranslation();
   const [step,        setStep]  = useState(0);
   const [houseName,   setHN]    = useState("");
@@ -217,10 +218,6 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
     onContinue: () => void,
   ) => (
     <div className="flex flex-col gap-4 animate-fade-up">
-      <div className="flex justify-between items-start">
-        <button className={btnOutline} onClick={goBack}>← {t('common.back', "Back")}</button>
-        <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
-      </div>
       <div className="mb-1">
         <p className="text-4xl mb-3">🔄</p>
         <h2 className="font-display font-black text-2xl text-foreground mb-1">{title}</h2>
@@ -292,6 +289,21 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
       const generatedCode   = await houseService.generateUniqueHouseCode();
       const newHouse        = await houseService.createHouse(houseName, generatedCode);
       const insertedMembers = await houseService.insertMembers(newHouse.id, names);
+
+      // Save initial profiles (PIN fallback 0000)
+      for (let i = 0; i < insertedMembers.length; i++) {
+        const member = insertedMembers[i];
+        await houseService.saveMemberProfile(newHouse.id, {
+          id: member.id,
+          pin: "0000",
+          nickname: member.name.split(" ")[0],
+          language: "en",
+          avatar_type: "color",
+          avatar_color: "#770042",
+          avatar_flag: "",
+          reminders: { cleaning: true, supplies: true, travel: true, reports: true },
+        });
+      }
       const getId           = (name: string) => insertedMembers.find(m => m.name === name.trim())?.id ?? null;
       const today           = new Date().toISOString().split("T")[0];
 
@@ -403,23 +415,43 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
 
-      {/* Progress header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/50 px-6 py-4">
+      {/* Header row */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="max-w-lg mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="font-display font-black text-xl text-primary">NusaNest</h1>
-            <span className="text-xs font-bold text-muted-foreground">{t('setup.step_count', { current: step + 1, total: TOTAL_STEPS, defaultValue: `Step ${step + 1} of ${TOTAL_STEPS}` })}</span>
-          </div>
-          <div className="flex gap-1">
-            {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-              <div key={i} className="flex-1 h-1.5 rounded-full transition-all duration-400"
-                style={{ 
-                  background: i < step ? "hsl(var(--primary))" : i === step ? "hsl(var(--primary))" : "hsl(var(--muted))",
-                  opacity: i <= step ? 1 : 0.3
-                }}
+          <div className="flex items-center gap-3 px-6 pt-6 pb-3">
+            {/* Left — Back button */}
+            <button
+              className="px-4 py-2 rounded-xl border-2 border-secondary/40 text-secondary text-xs font-bold hover:bg-secondary/5 transition-all active:scale-95 shrink-0"
+              onClick={step === 0 ? onBack : () => setStep(s => s - 1)}
+            >
+              ← Back
+            </button>
+
+            {/* Center — Progress bar */}
+            <div className="flex-1 flex gap-1">
+              {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex-1 h-1 rounded-full transition-all duration-300"
+                  style={{ backgroundColor: i <= step ? "#770042" : "#e2e8f0" }}
+                />
+              ))}
+            </div>
+
+            {/* Right — NusaNest logo */}
+            <div className="shrink-0">
+              <img
+                src="/nusa-putra-logo.png"
+                alt="NusaNest"
+                className="h-9 w-auto"
               />
-            ))}
+            </div>
           </div>
+
+          {/* Step counter below */}
+          <p className="text-right text-xs font-bold text-muted-foreground px-6 pb-2">
+            Step {step + 1} of {TOTAL_STEPS}
+          </p>
         </div>
       </div>
 
@@ -428,9 +460,6 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {/* ── STEP 0 — House name ── */}
         {step === 0 && (
           <div className="flex flex-col gap-4 animate-fade-up">
-            <div className="flex justify-end">
-              <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
-            </div>
             <div className="mb-2">
               <p className="text-4xl mb-3">🏠</p>
               <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.house_name.title', "Name your NusaNest")}</h2>
@@ -450,10 +479,6 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {/* ── STEP 1 — Number of people ── */}
         {step === 1 && (
           <div className="flex flex-col gap-4 animate-fade-up">
-            <div className="flex justify-between items-start">
-              <button className={btnOutline} onClick={goBack}>← {t('common.back', "Back")}</button>
-              <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
-            </div>
             <div className="mb-2">
               <p className="text-4xl mb-3">👥</p>
               <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.member_count.title', "How many housemates?")}</h2>
@@ -476,10 +501,6 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {/* ── STEP 2 — Member names ── */}
         {step === 2 && (
           <div className="flex flex-col gap-3 animate-fade-up">
-            <div className="flex justify-between items-start mb-2">
-              <button className={btnOutline} onClick={goBack}>← {t('common.back', "Back")}</button>
-              <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
-            </div>
             <div className="mb-1">
               <p className="text-4xl mb-3">✍️</p>
               <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.member_names.title', "Who lives there?")}</h2>
@@ -533,10 +554,6 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {/* ── STEP 5 — What do you share? ── */}
         {step === 5 && (
           <div className="flex flex-col gap-5 animate-fade-up">
-            <div className="flex justify-between items-start">
-              <button className={btnOutline} onClick={goBack}>← {t('common.back', "Back")}</button>
-              <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
-            </div>
             <div>
               <p className="text-4xl mb-3">🛒</p>
               <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.share_items.title', "What do you share?")}</h2>
@@ -620,10 +637,6 @@ const SetupWizard = ({ enterApp }: SetupWizardProps) => {
         {/* ── STEP 6 — Cleaning schedule ── */}
         {step === 6 && (
           <div className="flex flex-col gap-5 animate-fade-up">
-            <div className="flex justify-between items-start">
-              <button className={btnOutline} onClick={goBack}>← {t('common.back', "Back")}</button>
-              <img src="/nusa-putra-logo.png" alt="Nusa Putra" className="nusa-logo h-10 w-auto opacity-80" />
-            </div>
             <div>
               <p className="text-4xl mb-3">🧹</p>
               <h2 className="font-display font-black text-2xl text-foreground mb-1">{t('setup.steps.cleaning_schedule.title', "Cleaning schedule?")}</h2>

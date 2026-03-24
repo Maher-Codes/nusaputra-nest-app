@@ -27,11 +27,13 @@ interface JoinScreenProps {
 
 const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
   const { t } = useTranslation();
-  const [step, setStep]     = useState<"code" | "name">("code");
+  const [step, setStep]     = useState<"code" | "name" | "pin">("code");
   const [digits, setDig]    = useState(["", "", "", "", "", ""]);
   const [error, setError]   = useState("");
   const [loading, setLoad]  = useState(false);
-  const [chosen, setChosen] = useState<string | null>(null);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [pinDigits, setPinDigits] = useState(["", "", "", ""]);
+  const [pinError, setPinError] = useState("");
   const refs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Real DB data stored after successful code verification
@@ -137,20 +139,10 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
 
   // ── Choose a member and enter the dashboard ────────────────────────
   const choose = (m: Member) => {
-    setChosen(m.id);
-    if (!currentHouse) return;
-
-    const defaultProfile = {
-      id: m.id,
-      nickname: m.name.split(" ")[0],
-      avatar_color: avatarColor(m.name),
-      country_code: "",
-      language: "en",
-      reminders: { cleaning: true, supplies: true, travel: true, reports: true },
-      updated_at: new Date().toISOString()
-    };
-
-    finishAndEnter(m, defaultProfile);
+    setSelectedMember(m);
+    setPinDigits(["", "", "", ""]);
+    setPinError("");
+    setStep("pin");
   };
 
   const finishAndEnter = async (m: Member, profile: any) => {
@@ -281,6 +273,114 @@ const JoinScreen = ({ enterApp, onBack }: JoinScreenProps) => {
                 </span>
               </button>
             ))}
+          </div>
+        )}
+
+        {/* STEP: Enter PIN */}
+        {step === "pin" && selectedMember && (
+          <div className="flex flex-col gap-5 animate-fade-up">
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white text-2xl font-black mx-auto mb-3">
+                {selectedMember.name.charAt(0).toUpperCase()}
+              </div>
+              <h3 className="font-display font-black text-xl text-primary">
+                {selectedMember.name.charAt(0).toUpperCase() + selectedMember.name.slice(1).toLowerCase()}
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Enter your 4-digit PIN to confirm it's you.
+              </p>
+            </div>
+
+            {/* PIN input boxes */}
+            <div className="flex gap-3 justify-center">
+              {[0, 1, 2, 3].map(i => (
+                <input
+                  key={i}
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={pinDigits[i]}
+                  id={`join-pin-${i}`}
+                  autoFocus={i === 0}
+                  onChange={e => {
+                    const val = e.target.value.replace(/\D/g, "");
+                    const newDigits = [...pinDigits];
+                    newDigits[i] = val;
+                    setPinDigits(newDigits);
+                    setPinError("");
+                    if (val && i < 3) {
+                      document.getElementById(`join-pin-${i + 1}`)?.focus();
+                    }
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === "Backspace" && !pinDigits[i] && i > 0) {
+                      document.getElementById(`join-pin-${i - 1}`)?.focus();
+                    }
+                  }}
+                  className={`w-14 h-16 rounded-xl border-2 bg-card text-center text-2xl font-bold text-primary focus:outline-none transition-all ${
+                    pinError ? "border-red-400" : "border-border focus:border-primary"
+                  }`}
+                />
+              ))}
+            </div>
+
+            {pinError && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl px-4 py-3 text-red-600 font-bold text-sm text-center text-balance">
+                {pinError}
+              </div>
+            )}
+
+            <button
+              className="w-full py-4 rounded-xl bg-primary font-bold text-primary-foreground shadow-md hover:translate-y-[-1px] active:scale-[0.98] transition-all disabled:opacity-40"
+              disabled={pinDigits.some(d => !d) || loading}
+              onClick={async () => {
+                const enteredPin = pinDigits.join("");
+                setLoad(true);
+                try {
+                  if (!currentHouse) return;
+                  // Fetch this member's profile to check their PIN
+                  const profile = await houseService.getMemberProfile(currentHouse.id, selectedMember.id);
+                  const savedPin = profile?.pin || "0000";
+
+                  if (enteredPin === savedPin) {
+                    // PIN correct — enter the app
+                    finishAndEnter(selectedMember, profile || {
+                      id: selectedMember.id,
+                      nickname: selectedMember.name.split(" ")[0],
+                      language: "en",
+                      avatar_type: "color",
+                      avatar_color: avatarColor(selectedMember.name),
+                      avatar_flag: "",
+                      reminders: { cleaning: true, supplies: true, travel: true, reports: true },
+                      updated_at: new Date().toISOString(),
+                    });
+                  } else {
+                    setPinError("Incorrect PIN. Please try again.");
+                    setPinDigits(["", "", "", ""]);
+                    setTimeout(() => document.getElementById("join-pin-0")?.focus(), 50);
+                  }
+                } catch (err) {
+                  console.error("PIN verification failed:", err);
+                  setPinError("Something went wrong. Please try again.");
+                } finally {
+                  setLoad(false);
+                }
+              }}
+            >
+              {loading ? "Verifying..." : "Confirm PIN →"}
+            </button>
+
+            <button
+              className="text-sm text-muted-foreground font-semibold text-center hover:text-foreground transition-colors"
+              onClick={() => {
+                setStep("name");
+                setSelectedMember(null);
+                setPinDigits(["", "", "", ""]);
+                setPinError("");
+              }}
+            >
+              ← Choose a different name
+            </button>
           </div>
         )}
       </div>

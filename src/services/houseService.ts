@@ -437,6 +437,10 @@ export const houseService = {
 
   /** Fetches all reports for a house (or all reports if houseId is empty). */
   async getReportsForHouse(houseId: string): Promise<Report[]> {
+    if (!houseId || houseId.trim() === '') {
+      console.error('getReportsForHouse called without houseId');
+      return [];
+    }
     const reportsRef = houseId ? ref(db, `reports/${houseId}`) : ref(db, "reports");
     const snapshot = await get(reportsRef);
     if (!snapshot.exists()) return [];
@@ -472,6 +476,10 @@ export const houseService = {
 
   /** Fetches notifications for a specific member. */
   async getNotificationsForMember(houseId: string, memberId: string): Promise<ReportNotification[]> {
+    if (!houseId || houseId.trim() === '') {
+      console.error('getNotificationsForMember called without houseId');
+      return [];
+    }
     const notifsRef = ref(db, `report_notifications/${houseId}`);
     const snapshot = await get(notifsRef);
     if (!snapshot.exists()) return [];
@@ -593,12 +601,11 @@ export const houseService = {
           const excluded = settings?.excluded_members?.[resp.item_name] || [];
           // Also skip the traveller + any other active travellers
           const activeTravelModes = await this.getActiveTravelModes(houseId);
-          const currentlyTraveling = activeTravelModes.map(t => t.member_id);
+          const currentlyTraveling = activeTravelModes.map((t: TravelMode) => t.member_id);
           const allSkip = Array.from(new Set([...excluded, ...currentlyTraveling, travelData.member_id]));
 
           const activeOrder = order.filter((id: string) => !allSkip.includes(id));
           if (activeOrder.length > 0) {
-            const currentIdx = order.indexOf(travelData.member_id);
             // This is simplified; ideally we find the next in activeOrder that follows the traveler in order
             // For now, just take the first one in activeOrder that is NOT the traveler
             const nextId = activeOrder[0]; 
@@ -631,7 +638,7 @@ export const houseService = {
           });
 
           // Notify cover person
-          const traveler = (await this.getMembers(houseId)).find(m => m.id === travelData.member_id);
+          const traveler = (await this.getMembers(houseId)).find((m: Member) => m.id === travelData.member_id);
           await this.createNotification({
             house_id: houseId,
             member_id: coverMemberId,
@@ -656,6 +663,10 @@ export const houseService = {
 
   /** Get all active travel modes for a house. */
   async getActiveTravelModes(houseId: string): Promise<TravelMode[]> {
+    if (!houseId || houseId.trim() === '') {
+      console.error('getActiveTravelModes called without houseId');
+      return [];
+    }
     const travelRef = ref(db, `travel_modes/${houseId}`);
     const snapshot = await get(travelRef);
     if (!snapshot.exists()) return [];
@@ -674,7 +685,7 @@ export const houseService = {
 
     // Automation: Remove from cleaning exclusion
     const excluded = await this.getExcludedMembers(houseId, "cleaning");
-    await this.updateExcludedMembers(houseId, "cleaning", excluded.filter(id => id !== travelData.member_id));
+    await this.updateExcludedMembers(houseId, "cleaning", excluded.filter((id: string) => id !== travelData.member_id));
   },
 
   /** Update return date. */
@@ -685,6 +696,10 @@ export const houseService = {
 
   /** Get unsettle IOUs for a house. */
   async getUnsettledIOUs(houseId: string): Promise<TravelIOU[]> {
+    if (!houseId || houseId.trim() === '') {
+      console.error('getUnsettledIOUs called without houseId');
+      return [];
+    }
     const iousRef = ref(db, `travel_ious/${houseId}`);
     const snapshot = await get(iousRef);
     if (!snapshot.exists()) return [];

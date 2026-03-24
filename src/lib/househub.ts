@@ -25,6 +25,7 @@ export interface MemberProfile {
     travel: boolean;
     reports: boolean;
   };
+  pin?: string;             // 4-digit security PIN
   updated_at: string;
 }
 
@@ -40,6 +41,7 @@ export interface CleanRecord {
   member_id: string;
   house_id: string;
   date: string;            // DB column is date, not cleaning_date
+  created_at?: string;
 }
 
 export interface Purchase {
@@ -48,6 +50,7 @@ export interface Purchase {
   house_id: string;
   item_name: string;       // DB column is item_name (no item_id)
   date: string;            // DB column is date, not purchase_date
+  created_at?: string;
 }
 
 export interface SupplyResponsibility {
@@ -85,7 +88,6 @@ export interface Alert {
 }
 
 export interface HouseSettings {
-  id:                      string;
   house_id:                string;
   supplies:                Supply[];          // custom supply items
   cleaning_enabled:        boolean;
@@ -95,7 +97,6 @@ export interface HouseSettings {
   cleaning_rotation_order: string[];          // ordered member IDs for cleaning
   supplies_rotation_order: string[];          // ordered member IDs for supplies
   excluded_members:        Record<string, string[]>; // key = item name or "cleaning", value = array of excluded member IDs
-  created_at:              string;
 }
 
 export interface Report {

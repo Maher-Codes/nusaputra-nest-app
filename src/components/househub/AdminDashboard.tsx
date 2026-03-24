@@ -1,14 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { houseService } from "@/services/houseService";
-import { Member, Report, fmtDate, avatarColor, ago } from "@/lib/househub";
+import { Report, ago } from "@/lib/househub";
 import { 
   ShieldCheck, 
   Lock, 
   Search, 
-  Filter, 
   ChevronDown, 
   ChevronUp, 
-  MessageSquare,
   AlertCircle,
   Clock,
   CheckCircle2,
@@ -22,21 +20,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-const ADMIN_PASSWORD = "nusanest-admin-2024";
+const ADMIN_PASSWORD = "NP-Admin@NusaNest#2025!";
 
 export default function AdminDashboard() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return sessionStorage.getItem('nusanest_admin_auth') === 'true';
+  });
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [locked, setLocked] = useState(false);
   const [reports, setReports] = useState<Report[]>([]);
-  const [membersMap, setMembersMap] = useState<Record<string, Member>>({});
-  const [houses, setHouses] = useState<any[]>([]);
   
   // Filter & Sort state
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -51,66 +50,37 @@ export default function AdminDashboard() {
   // Auth Handler
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (locked) return;
+
     if (password === ADMIN_PASSWORD) {
       setIsAuthenticated(true);
-      fetchData();
+      setAttempts(0);
+      sessionStorage.setItem('nusanest_admin_auth', 'true');
     } else {
-      toast.error("Incorrect password. Please try again.");
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      setPassword("");
+
+      if (newAttempts >= 5) {
+        setLocked(true);
+        toast.error("Too many incorrect attempts. Please refresh the page to try again.");
+      } else {
+        toast.error(`Incorrect password. ${5 - newAttempts} attempts remaining.`);
+      }
     }
   };
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Note: In a real app, we'd fetch all houses first. 
-      // For this implementation, we'll need to know which houses to fetch reports for.
-      // Since it's a student housing app, we'll assume there's a way to get all house IDs.
-      // For now, I'll use a placeholder or assume the service gets all reports if houseId is omitted (though my service expects houseId).
-      // Let's improve the service or just fetch for a few known ones for the demo, 
-      // but ideally we should be able to get all reports.
-      
-      // I'll assume for this dashboard we fetch all from a root 'reports' node if possible,
-      // but Firebase Realtime DB doesn't easily support "get all children of all children".
-      // I'll add a helper to houseService to get all reports if I can, or just mock it for now.
-      
-      // Let's assume we can at least get reports for the current house if we were in the app.
-      // Realistically, an admin dashboard needs a way to list all houses.
-      // I'll fetch all houses first.
-      
-      // Wait, I don't have a listHouses method. Let me check houseService again.
-      // Oh, I can just listen to the root 'reports' node if I have admin access.
-      
-      const reportsData: Report[] = [];
-      const membersData: Record<string, Member> = {};
-      
-      // This is a bit of a hack since RDB is hierarchical. 
-      // In a real production app, you'd have a flat index or Cloud Function.
-      // But for this project scope, I'll fetch the whole 'reports' tree.
-      const reportsSnapshot = await houseService.getReportsForHouse(""); // My modified service might need a blank or special key
-      // Actually, let's just use the 'reports' ref directly if houseId is empty.
-      
-      // I'll use a direct fetch for now to simplify.
-      const allReports = await houseService.getReportsForHouse(""); 
-      setReports(allReports);
-      
-      // Fetch all members to resolve IDs to names
-      // Again, this is expensive but okay for a small staff tool
-      const housesRef = await houseService.getHouseByCode(""); // I don't have listHouses
-      
-      // For now, I'll just show the reports. The reporter names might be missing if I can't resolve them.
-      // I'll add a 'getMembersForAllHouses' if needed.
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('nusanest_admin_auth');
   };
+
+
 
   // Improved Data Fetching
   useEffect(() => {
     if (isAuthenticated) {
       const loadAllData = async () => {
-        setLoading(true);
         try {
           // In NusaNest, we'll fetch all reports by iterating houses or using a flat index
           // For this demo, let's assume we can get them.
@@ -127,8 +97,8 @@ export default function AdminDashboard() {
           
           // Resolving names is tricky without a flat members table.
           // I'll use placeholders if names aren't found.
-        } finally {
-          setLoading(false);
+        } catch (err) {
+          console.error(err);
         }
       };
       loadAllData();
@@ -217,9 +187,15 @@ export default function AdminDashboard() {
                 <Button 
                   type="submit" 
                   className="w-full h-14 rounded-2xl font-display font-black text-lg bg-primary hover:bg-primary/90 transition-all shadow-lg active:scale-95"
+                  disabled={!password || locked}
                 >
                   Unlock Access →
                 </Button>
+                {locked && (
+                  <p className="text-red-500 text-sm font-bold text-center mt-2">
+                    🔒 Access locked. Please refresh the page to try again.
+                  </p>
+                )}
               </form>
             </CardContent>
           </Card>
@@ -250,15 +226,13 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-             <Button 
-               variant="secondary" 
-               size="sm" 
-               className="rounded-full font-bold px-6 bg-white/10 text-white hover:bg-white/20 border-white/20"
-               onClick={() => setIsAuthenticated(false)}
+             <button
+               onClick={handleLogout}
+               className="flex items-center gap-2 px-3 py-2 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-all text-sm font-bold"
              >
-               <LogOut size={16} className="mr-2" />
+               <LogOut size={16} />
                Logout
-             </Button>
+             </button>
           </div>
         </div>
       </header>

@@ -15,16 +15,8 @@ const App = () => {
   const { i18n } = useTranslation();
 
   useEffect(() => {
-    const dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.dir = dir;
+    document.documentElement.dir = 'ltr';
     document.documentElement.lang = i18n.language;
-    
-    // Switch font-family globally for Arabic
-    if (i18n.language === 'ar') {
-      document.body.style.fontFamily = "'Cairo', sans-serif";
-    } else {
-      document.body.style.fontFamily = "";
-    }
   }, [i18n.language]);
 
   return (

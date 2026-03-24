@@ -189,7 +189,7 @@ const Index = () => {
   // ── Screen routing ─────────────────────────────────────────────────
   if (screen === "splash")  return <SplashScreen />;
   if (screen === "landing") return <LandingScreen onSetup={() => setScreen("setup")} onJoin={() => setScreen("join")} />;
-  if (screen === "setup")   return <SetupWizard   enterApp={enterApp} />;
+  if (screen === "setup")   return <SetupWizard   enterApp={enterApp} onBack={() => setScreen("landing")} />;
   if (screen === "join")    return <JoinScreen    enterApp={enterApp} onBack={() => setScreen("landing")} />;
 
   if (screen === "app" && appData) {

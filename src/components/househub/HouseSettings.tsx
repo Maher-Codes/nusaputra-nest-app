@@ -365,6 +365,7 @@ const MembersTab = ({
 }) => {
   const { t } = useTranslation();
   const [newName,  setNewName]  = useState("");
+  const [nameError, setNameError] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
 
   const addMember = () => {
@@ -417,22 +418,34 @@ const MembersTab = ({
         </div>
       ))}
 
-      {/* Add new member */}
-      <div className="flex gap-2 mt-2">
-        <input
-          className="flex-1 px-4 py-3 rounded-xl border border-border bg-card text-foreground font-medium focus:outline-none focus:border-primary transition-colors"
-          placeholder={t('settings.new_member_placeholder', "New member name...")}
-          value={newName}
-          onChange={e => setNewName(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && addMember()}
-        />
-        <button
-          onClick={addMember}
-          disabled={!newName.trim()}
-          className="px-4 py-3 rounded-xl bg-primary text-primary-foreground font-bold disabled:opacity-40 transition-all active:scale-95"
-        >
-          <Plus size={18} />
-        </button>
+      <div className="flex flex-col gap-2 mt-2">
+        <div className="flex gap-2">
+          <input
+            className="flex-1 px-4 py-3 rounded-xl border border-border bg-card text-foreground font-medium focus:outline-none focus:border-primary transition-colors"
+            placeholder="e.g. Abdullah"
+            value={newName}
+            onChange={e => {
+              const raw = e.target.value;
+              const cleaned = raw.replace(/[^a-zA-Z\s\-']/g, "");
+              setNameError(cleaned !== raw);
+              const formatted = cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+              setNewName(formatted);
+            }}
+            onKeyDown={e => e.key === "Enter" && addMember()}
+          />
+          <button
+            onClick={addMember}
+            disabled={!newName.trim()}
+            className="px-4 py-3 rounded-xl bg-primary text-primary-foreground font-bold disabled:opacity-40 transition-all active:scale-95"
+          >
+            <Plus size={18} />
+          </button>
+        </div>
+        {nameError && (
+          <p className="text-xs font-medium mt-1" style={{ color: "#dc2626" }}>
+            ⚠️ Names should only contain letters — e.g. Abdullah
+          </p>
+        )}
       </div>
     </div>
   );
